@@ -249,13 +249,16 @@ def apply_mapping(
     mapping: dict[str, str | None],
     date_format: str,
     alias_index: dict[str, str] | None = None,
+    target_schema: "schema.Schema | None" = None,
 ) -> tuple[pd.DataFrame, list[str], str]:
-    """Rename mapped source columns to canonical names and coerce types.
+    """Rename mapped source columns to canonical names and coerce types per
+    the target schema (default: pipeline).
 
     Returns (canonical frame, problem strings, resolved date format).
     Raises AmbiguousDateFormat / ConflictingDateFormat when date_format='auto'
     cannot be resolved — callers (UI) catch these to force a user choice.
     """
+    sch = target_schema or schema.PIPELINE_SCHEMA
     problems: list[str] = []
     out = pd.DataFrame(index=df.index)
 
@@ -263,7 +266,7 @@ def apply_mapping(
         if source and source in df.columns:
             out[canonical] = df[source].astype(str).str.strip()
 
-    mapped_date_cols = [f for f in schema.DATE_FIELDS if f in out.columns]
+    mapped_date_cols = [f for f in sch.date_fields if f in out.columns]
     resolved = date_format
     if date_format == "auto":
         resolved = infer_date_format([out[f] for f in mapped_date_cols])
@@ -275,16 +278,18 @@ def apply_mapping(
         out[field] = parsed
         out[f"{field}_unparsed"] = unparsed
 
-    if "amount" in out.columns:
-        out["amount"], amount_problems = parse_amount_series(out["amount"])
-        problems.extend(amount_problems)
+    for field in sch.fields_of_type("money"):
+        if field in out.columns:
+            out[field], money_problems = parse_amount_series(out[field])
+            problems.extend(money_problems)
 
-    if "probability" in out.columns:
-        out["probability"] = pd.to_numeric(
-            out["probability"].str.replace("%", "", regex=False), errors="coerce"
-        )
+    for field in sch.fields_of_type("number"):
+        if field in out.columns:
+            out[field] = pd.to_numeric(
+                out[field].str.replace("%", "", regex=False), errors="coerce"
+            )
 
-    for field in ("account_name", "owner"):
+    for field in sch.normalized_fields:
         if field in out.columns:
             out[f"{field}_raw"] = out[field]
             out[field] = out[field].map(lambda v: normalize_name(v, alias_index))

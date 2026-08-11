@@ -16,15 +16,17 @@ NOT_MAPPED = "— not mapped —"
 
 
 def render_mapping_grid(
-    df: pd.DataFrame, suggested: dict[str, str | None], key_prefix: str = "map"
+    df: pd.DataFrame, suggested: dict[str, str | None], key_prefix: str = "map",
+    target_schema: schema.Schema | None = None,
 ) -> dict[str, str | None]:
     """One row per canonical field: description, source-column selectbox
     (pre-selected from suggestions), live sample values. Returns the mapping."""
+    sch = target_schema or schema.PIPELINE_SCHEMA
     headers = list(df.columns)
     result: dict[str, str | None] = {}
     for section, fields in (
-        ("Required fields", schema.REQUIRED_FIELDS),
-        ("Optional fields", schema.OPTIONAL_FIELDS),
+        ("Required fields", sch.required),
+        ("Optional fields", sch.optional),
     ):
         st.subheader(section)
         for field, spec in fields.items():
@@ -50,7 +52,7 @@ def render_mapping_grid(
 
 def render_date_format_choice(
     df: pd.DataFrame, mapping: dict[str, str | None], default: str = "auto",
-    key_prefix: str = "map",
+    key_prefix: str = "map", target_schema: schema.Schema | None = None,
 ) -> str:
     """Date format selector with a live preview of parsed sample dates so a
     misparse is visible before import."""
@@ -63,7 +65,8 @@ def render_date_format_choice(
         "Date format", options, index=options.index(default if default in options else "auto"),
         format_func=labels.get, horizontal=True, key=f"{key_prefix}_datefmt",
     )
-    date_cols = [mapping[f] for f in schema.DATE_FIELDS if mapping.get(f)]
+    sch = target_schema or schema.PIPELINE_SCHEMA
+    date_cols = [mapping[f] for f in sch.date_fields if mapping.get(f)]
     if date_cols:
         sample = df[date_cols[0]].head(20)
         sample = sample[sample.str.strip() != ""].head(3)
