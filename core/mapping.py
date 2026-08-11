@@ -25,6 +25,14 @@ SYNONYMS: dict[str, list[str]] = {
     "sub_vertical": ["subvertical", "sub industry", "segment", "industry segment", "vertical"],
     "exec_sponsor": ["executive sponsor", "sponsor", "exec"],
     "created_date": ["created", "created on", "create date", "open date", "created dt"],
+    # account-facts schema
+    "annual_spend": ["annual spend", "yearly spend", "spend", "acr"],
+    "agreement_end_date": ["agreement end", "contract end", "renewal date", "ea end"],
+    "install_base": ["install base", "installed products", "current products", "deployed"],
+    "incumbent_tools": ["incumbents", "competitor tools", "current tools", "incumbent"],
+    "known_gaps": ["gaps", "known gaps"],
+    "exec_contacts": ["contacts", "executive contacts", "key contacts"],
+    "regulatory_scope": ["regulatory", "regulations", "compliance scope", "frameworks"],
 }
 
 
@@ -32,9 +40,13 @@ def _norm(s: str) -> str:
     return re.sub(r"[^\w\s]", " ", s.lower()).strip().replace("_", " ")
 
 
-def suggest_mapping(headers: list[str]) -> dict[str, str | None]:
-    """Fuzzy-match source headers to canonical fields. Suggestions only —
-    the user confirms everything in the mapping UI."""
+def suggest_mapping(
+    headers: list[str], target_schema: schema.Schema | None = None
+) -> dict[str, str | None]:
+    """Fuzzy-match source headers to canonical fields of the target schema
+    (default: pipeline). Suggestions only — the user confirms everything in
+    the mapping UI."""
+    sch = target_schema or schema.PIPELINE_SCHEMA
     normed = {h: " ".join(_norm(h).split()) for h in headers}
     used: set[str] = set()
     suggestion: dict[str, str | None] = {}
@@ -43,7 +55,7 @@ def suggest_mapping(headers: list[str]) -> dict[str, str | None]:
         suggestion[canonical] = header
         used.add(header)
 
-    for canonical in schema.ALL_FIELDS:
+    for canonical in sch.all_fields:
         suggestion[canonical] = None
         targets = [" ".join(canonical.split("_"))] + [
             " ".join(_norm(s).split()) for s in SYNONYMS.get(canonical, [])

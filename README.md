@@ -16,12 +16,18 @@ streamlit run app/Home.py
    schema (suggestions are pre-filled; you confirm everything), assign stage
    buckets, and save the import as a snapshot. Mappings persist as named
    profiles so the next weekly export is a zero-click re-import.
-2. **Pages 1–3** (added by later sessions) — forecast narrative, QBR assembler,
-   account plan generator, all reading from the saved snapshots.
+2. **Forecast Narrative** — drafts the weekly commit/upside/risk narrative with
+   week-over-week movement and rule-based, evidence-backed risk flags
+   (`config/risk_rules.yaml`); export via copy or .md download.
+3. **QBR Assembler** — one click from snapshot to a 5-slide .pptx + .md
+   appendix; numbers always identical to the narrative (same `core/forecast`).
+4. **Account Plan** — account-facts CSV + pipeline snapshot → MCEM plan with an
+   obligation → capability → gap crosswalk (`config/obligation_map.yaml`,
+   `config/product_map.yaml`) and a whitespace estimate; .pptx/.md export.
 
 Sample data: `sample_data/energy_pipeline_sample.csv` (40 fictional rows,
-deliberately messy). Seed demo snapshots with
-`python sample_data/seed_snapshots.py`.
+deliberately messy) and `sample_data/account_facts_sample.csv`. Seed demo
+snapshots with `python sample_data/seed_snapshots.py`.
 
 Tests: `python -m pytest`
 

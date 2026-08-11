@@ -1,0 +1,55 @@
+# Free-text -> capability_category resolver. Matching is case-insensitive
+# substring against these alias lists. `products` covers our product labels
+# (pipeline `product` values and install_base entries); `incumbents` covers
+# competitor tools (a resolved incumbent = displacement play = "partial").
+# Unresolved values surface in the UI with an assign-category control that
+# appends here.
+products:
+  siem:
+    - microsoft sentinel
+    - sentinel
+    - siem
+  ot_security:
+    - defender for ot
+    - defender for iot
+  endpoint_protection:
+    - defender for endpoint
+    - defender for cloud
+    - mde
+  identity:
+    - entra
+    - entra id
+    - azure ad
+    - active directory
+  data_protection:
+    - purview
+    - information protection
+  patch_mgmt:
+    - intune
+    - azure update manager
+    - autopatch
+    - defender vulnerability management
+incumbents:
+  siem:
+    - splunk
+    - qradar
+    - logrhythm
+  ot_security:
+    - claroty
+    - nozomi
+    - dragos
+  endpoint_protection:
+    - crowdstrike
+    - sentinelone
+    - symantec
+  identity:
+    - okta
+    - ping identity
+    - cyberark
+  data_protection:
+    - varonis
+    - forcepoint
+  patch_mgmt:
+    - tanium
+    - ivanti
+    - sccm
