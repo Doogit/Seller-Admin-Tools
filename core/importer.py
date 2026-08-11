@@ -98,10 +98,9 @@ def import_snapshot(
 
     if as_of_date is None:
         as_of_date = dt.date.today()
-    snapshot_id = store.create_snapshot(
-        label, as_of_date, profile_id, sha, db_path=db_path
+    snapshot_id = store.write_snapshot(
+        label, as_of_date, profile_id, sha, canonical, db_path=db_path
     )
-    store.insert_opportunities(snapshot_id, canonical, db_path=db_path)
 
     result.snapshot_id = snapshot_id
     result.n_rows = len(canonical)

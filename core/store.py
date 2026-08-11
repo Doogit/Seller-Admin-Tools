@@ -114,25 +114,50 @@ def create_snapshot(label, as_of_date, profile_id, file_sha256, db_path=None) ->
         return cur.lastrowid
 
 
-def insert_opportunities(snapshot_id: int, df: pd.DataFrame, db_path=None) -> int:
+def _opp_rows(snapshot_id: int, df: pd.DataFrame) -> list[list]:
     rows = []
     for _, r in df.iterrows():
         values = [snapshot_id]
         for col in OPP_COLUMNS:
             v = r.get(col)
-            if v is None or (isinstance(v, float) and pd.isna(v)) or pd.isna(v):
-                values.append(None)
-            else:
-                values.append(v)
+            values.append(None if v is None or pd.isna(v) else v)
         rows.append(values)
-    placeholders = ", ".join("?" for _ in range(len(OPP_COLUMNS) + 1))
+    return rows
+
+
+_OPP_INSERT = (
+    f"INSERT INTO opportunities(snapshot_id, {', '.join(OPP_COLUMNS)}) "
+    f"VALUES({', '.join('?' for _ in range(len(OPP_COLUMNS) + 1))})"
+)
+
+
+def insert_opportunities(snapshot_id: int, df: pd.DataFrame, db_path=None) -> int:
+    rows = _opp_rows(snapshot_id, df)
     with _connect(db_path) as con:
-        con.executemany(
-            f"INSERT INTO opportunities(snapshot_id, {', '.join(OPP_COLUMNS)}) "
-            f"VALUES({placeholders})",
-            rows,
-        )
+        con.executemany(_OPP_INSERT, rows)
     return len(rows)
+
+
+def write_snapshot(
+    label, as_of_date, profile_id, file_sha256, df: pd.DataFrame, db_path=None
+) -> int:
+    """Snapshot row + opportunity rows in ONE transaction — a failed import
+    writes nothing, so its hash can never poison the duplicate guard."""
+    with _connect(db_path) as con:
+        cur = con.execute(
+            """INSERT INTO snapshots(imported_at, as_of_date, profile_id, label, file_sha256)
+               VALUES(?, ?, ?, ?, ?)""",
+            (
+                dt.datetime.now().isoformat(timespec="seconds"),
+                str(as_of_date),
+                profile_id,
+                label,
+                file_sha256,
+            ),
+        )
+        snapshot_id = cur.lastrowid
+        con.executemany(_OPP_INSERT, _opp_rows(snapshot_id, df))
+        return snapshot_id
 
 
 def list_snapshots(db_path=None) -> pd.DataFrame:

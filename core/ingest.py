@@ -24,6 +24,11 @@ CORPORATE_SUFFIXES = {
 DATE_FORMATS = ("auto", "mdy", "dmy", "iso")
 
 
+class IngestError(Exception):
+    """File-level problem the user must fix (empty file, colliding headers,
+    undecodable bytes) — shown as a friendly error, never a traceback."""
+
+
 class AmbiguousDateFormat(Exception):
     """All sampled date values are ambiguous (both parts <= 12) — the user
     must choose a format explicitly."""
@@ -56,15 +61,28 @@ def load_csv(file) -> pd.DataFrame:
             raw = raw.encode("utf-8")
     else:
         raw = Path(file).read_bytes()
-    text = raw.decode("utf-8-sig")
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("cp1252")  # default Windows/Excel ANSI export
+    if not text.strip():
+        raise IngestError("The file is empty — nothing to import.")
 
-    header = text.splitlines()[0] if text else ""
+    header = text.splitlines()[0]
     sep = ";" if header.count(";") > header.count(",") else ","
 
     df = pd.read_csv(
         io.StringIO(text), sep=sep, dtype=str, keep_default_na=False, skipinitialspace=True
     )
     df.columns = [str(c).strip() for c in df.columns]
+    seen: dict[str, int] = {}
+    for c in df.columns:
+        seen[c] = seen.get(c, 0) + 1
+    dupes = sorted(c for c, n in seen.items() if n > 1)
+    if dupes:
+        raise IngestError(
+            "Duplicate column header(s) after trimming: " + ", ".join(dupes)
+        )
     return df
 
 
@@ -81,7 +99,13 @@ def parse_amount_series(s: pd.Series) -> tuple[pd.Series, list[str]]:
             continue
         symbols.update(CURRENCY_RE.findall(v0))
         negative = v0.startswith("(") and v0.endswith(")")
-        cleaned = re.sub(r"[^\d.\-]", "", v0)
+        body = re.sub(r"[^\d.,\-]", "", v0)
+        # Comma-as-decimal ("1.234,56" / "1234,56") is the unambiguous
+        # European signal — normalize instead of silently corrupting ~1000x.
+        if re.fullmatch(r"-?(\d{1,3}(\.\d{3})+|\d+),\d{1,2}", body):
+            cleaned = body.replace(".", "").replace(",", ".")
+        else:
+            cleaned = body.replace(",", "")
         try:
             num = float(cleaned)
         except ValueError:
@@ -111,11 +135,11 @@ def _classify_date_value(v: str) -> str:
     a_ok_month, b_ok_month = a <= 12, b <= 12
     if a_ok_month and b_ok_month:
         return "ambiguous"
-    if a_ok_month:
-        return "mdy_only"  # second part > 12, so it must be the day
-    if b_ok_month:
+    if a_ok_month and b <= 31:
+        return "mdy_only"  # second part in 13..31, so it must be the day
+    if b_ok_month and a <= 31:
         return "dmy_only"
-    return "other"  # neither part can be a month — malformed
+    return "other"  # malformed (a day part > 31 is junk, not format evidence)
 
 
 def infer_date_format(columns: list[pd.Series]) -> str:
@@ -125,6 +149,7 @@ def infer_date_format(columns: list[pd.Series]) -> str:
     dmy_evidence: list[str] = []
     saw_ambiguous = False
     saw_iso = False
+    saw_other = False
     for col in columns:
         for v in col:
             kind = _classify_date_value(v)
@@ -136,6 +161,8 @@ def infer_date_format(columns: list[pd.Series]) -> str:
                 saw_ambiguous = True
             elif kind == "iso":
                 saw_iso = True
+            elif kind == "other":
+                saw_other = True
     if mdy_evidence and dmy_evidence:
         raise ConflictingDateFormat(mdy_evidence, dmy_evidence)
     if mdy_evidence:
@@ -146,7 +173,11 @@ def infer_date_format(columns: list[pd.Series]) -> str:
         raise AmbiguousDateFormat(
             "Every slash-form date is ambiguous (both parts <= 12) — choose a date format."
         )
-    return "iso" if saw_iso else "iso"
+    if saw_iso or not saw_other:
+        return "iso"  # ISO evidence, or nothing but blanks (format is moot)
+    raise AmbiguousDateFormat(
+        "No recognizable date values found — choose a date format explicitly."
+    )
 
 
 def parse_date_series(s: pd.Series, date_format: str) -> tuple[pd.Series, pd.Series]:

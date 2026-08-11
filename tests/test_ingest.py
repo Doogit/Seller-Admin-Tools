@@ -106,6 +106,40 @@ def test_apply_mapping_full_sample(sample_path, sample_mapping, alias_index):
     assert any("lack opportunity_id" in i["message"] for i in issues)
 
 
+def test_european_decimal_comma_normalized():
+    s = pd.Series(["€1.234,56", "1234,56", "$1,234.00", "$1.234.567,89"])
+    values, _ = ingest.parse_amount_series(s)
+    assert values.tolist() == [1234.56, 1234.56, 1234.0, 1234567.89]
+
+
+def test_cp1252_fallback():
+    data = "Account,Amount\nCafé Energie,100\n".encode("cp1252")
+    df = ingest.load_csv(data)
+    assert df.iloc[0]["Account"] == "Café Energie"
+
+
+def test_empty_file_raises_friendly_error():
+    with pytest.raises(ingest.IngestError, match="empty"):
+        ingest.load_csv(b"")
+
+
+def test_duplicate_headers_after_strip_raise():
+    with pytest.raises(ingest.IngestError, match="Duplicate column"):
+        ingest.load_csv(b"Amount ,Amount\n1,2\n")
+
+
+def test_day_over_31_is_not_format_evidence():
+    # '05/45/2026' is junk, not month-first evidence; the ambiguous value
+    # must still force an explicit choice.
+    with pytest.raises(ingest.AmbiguousDateFormat):
+        ingest.infer_date_format([pd.Series(["05/45/2026", "03/04/2026"])])
+
+
+def test_no_recognizable_dates_raises():
+    with pytest.raises(ingest.AmbiguousDateFormat):
+        ingest.infer_date_format([pd.Series(["Jan 5, 2026", "TBD"])])
+
+
 def test_validate_frame_missing_required_blocks():
     df = pd.DataFrame({"account_name": ["a"]})
     issues = schema.validate_frame(df)
