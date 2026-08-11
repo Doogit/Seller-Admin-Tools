@@ -1,0 +1,7 @@
+# Name normalization: canonical -> [aliases]. Both sides are compared after
+# base normalization (lowercase, punctuation and corporate suffixes stripped),
+# so only list variants that survive that step.
+accounts:
+  meridian energy:
+    - meridian energy holdings
+owners: {}

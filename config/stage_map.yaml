@@ -1,0 +1,23 @@
+# Maps raw stage strings (lowercased) -> canonical buckets:
+#   early | mid | late | closed_won | closed_lost
+# Unmapped stages surface in the UI for one-click assignment; assignments
+# persist to the mapping profile, not this file.
+stages:
+  # Generic CRM labels
+  prospecting: early
+  qualification: early
+  discovery: early
+  develop: mid
+  proposal: mid
+  solution validation: mid
+  negotiation: late
+  contracting: late
+  commit: late
+  closed won: closed_won
+  closed lost: closed_lost
+  # MCEM-style labels (examples)
+  01 inspire: early
+  02 design: mid
+  03 empower: mid
+  04 achieve: late
+  05 realize: closed_won
