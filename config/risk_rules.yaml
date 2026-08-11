@@ -1,0 +1,12 @@
+# Risk-rule thresholds. Edit freely — every flag must be defensible, so each
+# rule emits an evidence string the manager can read verbatim.
+stalled:
+  min_days_in_stage: 45      # same stage across snapshot history spanning >= N days
+slipped:
+  min_days_slip: 90          # close_date moved out >= 1 quarter vs prior snapshot
+no_sponsor:
+  min_amount: 500000         # exec_sponsor blank on deals >= $; skipped if unmapped
+big_and_late:
+  min_amount: 1000000        # amount >= $ ...
+  within_days: 30            # ... and close_date within N days of the as-of date
+  # ... but stage bucket is not "late" (and not closed)

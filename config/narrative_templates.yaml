@@ -1,0 +1,18 @@
+# Narrative wording — editable without code changes. Placeholders are filled
+# by core/narrative.py; no adjectives without data behind them.
+commit:
+  base: "Commit stands at {commit}{wow} with {late_count} late-stage deal(s)."
+  wow_up: ", up {delta} week-over-week"
+  wow_down: ", down {delta} week-over-week"
+  wow_flat: ", flat week-over-week"
+  coverage: " Coverage against the {quota} quota is {coverage}x."
+  derived_note: " Buckets are derived from stage — map forecast_category for accuracy."
+upside:
+  base: "Upside totals {upside} across {upside_count} deal(s)."
+  mover: " {name} ({amount}): {what}."
+  no_movers: " No week-over-week movement to report."
+risk:
+  base: "{flag_count} deal(s) flagged, {at_risk} at risk."
+  none: "No risk flags this week."
+  item: " {name} ({amount}) — {evidence}."
+  more: " Plus {n} more flagged deal(s) in the table below."
