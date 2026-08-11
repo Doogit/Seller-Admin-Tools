@@ -6,13 +6,14 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+for p in (str(REPO_ROOT), str(REPO_ROOT / "app")):
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 import streamlit as st
 
+import ui
 from core import forecast, narrative, store
-from core.formatting import fmt_money
 
 st.set_page_config(page_title="Forecast Narrative", layout="wide")
 st.title("Forecast narrative")
@@ -22,10 +23,7 @@ if snaps.empty:
     st.info("No snapshots yet — import a pipeline CSV on the Home page first.")
     st.stop()
 
-labels = {
-    int(r["id"]): f"{r['label']} (as of {r['as_of_date']}, {r['n_rows']} rows)"
-    for _, r in snaps.iterrows()
-}
+labels = ui.snapshot_labels(snaps)
 ids = list(labels)
 
 col1, col2, col3 = st.columns(3)
@@ -49,28 +47,8 @@ prior_rollup = forecast.bucket_rollup(prior_id) if prior_id else None
 deltas = forecast.wow_delta(current_id, prior_id)
 flags = forecast.risk_flags(current_id)
 
-at_risk = float(
-    flags.drop_duplicates(subset=["opportunity_name", "account_name"])["amount"]
-    .fillna(0).sum()
-) if not flags.empty else 0.0
-
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("Commit", fmt_money(rollup["commit"]),
-          delta=fmt_money(rollup["commit"] - prior_rollup["commit"]) if prior_rollup else None)
-m2.metric("Upside", fmt_money(rollup["upside"]),
-          delta=fmt_money(rollup["upside"] - prior_rollup["upside"]) if prior_rollup else None)
-m3.metric("Coverage", f"{rollup['total_open'] / quota:.1f}x" if quota else "—")
-m4.metric("At risk", fmt_money(at_risk))
-
-if rollup.get("derived"):
-    st.caption("Buckets derived from stage — map forecast_category for accuracy.")
-if deltas is not None:
-    n_unmatched = int((deltas["change_type"] == "unmatched").sum())
-    if n_unmatched:
-        st.warning(
-            f"{n_unmatched} opportunities couldn't be matched to last week — "
-            "renamed or ID missing? See the movement table."
-        )
+ui.metric_row(rollup, prior_rollup, quota or None, ui.at_risk_total(flags))
+ui.unmatched_warning(deltas)
 
 # Drafts — regenerate only on explicit confirm so edits survive reruns
 sections = narrative.draft(rollup, deltas, flags, prior_rollup=prior_rollup,
@@ -97,16 +75,8 @@ if st.button("Regenerate", disabled=not confirm):
     st.rerun()
 
 st.subheader("Risk detail (coaching view)")
-for note in flags.attrs.get("notes", []):
-    st.caption(f"Note: {note}")
-if flags.empty:
-    st.write("No risk flags.")
-else:
-    st.dataframe(flags, width="stretch", hide_index=True)
-
-if deltas is not None and not deltas.empty:
-    with st.expander("Week-over-week movement detail"):
-        st.dataframe(deltas, width="stretch", hide_index=True)
+ui.risk_table(flags)
+ui.deltas_expander(deltas)
 
 st.subheader("Export")
 md = narrative.assemble_markdown(edited, period=labels[current_id].split(" ")[0])

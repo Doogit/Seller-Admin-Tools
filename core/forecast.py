@@ -57,6 +57,18 @@ def _keys(df: pd.DataFrame) -> pd.Series:
     return ids.where(ids != "", names)
 
 
+def _open_with_category(df: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
+    """Open rows with a `category` column resolved per-row: forecast_category
+    when populated, else derived from stage bucket. Second value is True when
+    any open row used the stage fallback."""
+    open_df = df[~df["stage_bucket"].isin(CLOSED_BUCKETS)].copy()
+    cat = open_df["forecast_category"].str.lower()
+    from_stage = open_df["stage_bucket"].map(STAGE_TO_CATEGORY)
+    open_df["category"] = cat.where(cat.isin(CATEGORY_VALUES), from_stage)
+    derived = bool(((~cat.isin(CATEGORY_VALUES)) & from_stage.notna()).any())
+    return open_df, derived
+
+
 def bucket_rollup(snapshot_id: int, db_path=None) -> dict:
     """Commit / upside / pipeline totals for one snapshot.
 
@@ -65,13 +77,7 @@ def bucket_rollup(snapshot_id: int, db_path=None) -> dict:
     when any open row used the stage fallback.
     """
     df = _clean(store.get_opportunities(snapshot_id, db_path=db_path))
-    open_df = df[~df["stage_bucket"].isin(CLOSED_BUCKETS)].copy()
-
-    cat = open_df["forecast_category"].str.lower()
-    from_stage = open_df["stage_bucket"].map(STAGE_TO_CATEGORY)
-    resolved = cat.where(cat.isin(CATEGORY_VALUES), from_stage)
-    derived = bool(((~cat.isin(CATEGORY_VALUES)) & from_stage.notna()).any())
-    open_df["category"] = resolved
+    open_df, derived = _open_with_category(df)
 
     amounts = open_df["amount"].fillna(0)
     result = {"derived": derived}
@@ -174,6 +180,81 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
                 "prior-week row with no opportunity_id and no name match this week")
 
     return pd.DataFrame(rows, columns=DELTA_COLUMNS)
+
+
+BUCKET_ORDER = ["early", "mid", "late", "closed_won", "closed_lost", "unmapped"]
+
+
+def stage_distribution(snapshot_id: int, prior_id: int | None = None, db_path=None) -> pd.DataFrame:
+    """Count + $ per stage bucket, with week-over-week deltas when a prior
+    snapshot is given. Buckets ordered early -> closed; unmapped last."""
+    def dist(sid):
+        df = _clean(store.get_opportunities(sid, db_path=db_path))
+        bucket = df["stage_bucket"].where(df["stage_bucket"] != "", "unmapped")
+        g = df.assign(bucket=bucket).groupby("bucket")
+        return pd.DataFrame({"count": g.size(), "amount": g["amount"].sum()})
+
+    out = dist(snapshot_id).reindex(BUCKET_ORDER).fillna(0)
+    if prior_id is not None:
+        prior = dist(prior_id).reindex(BUCKET_ORDER).fillna(0)
+        out["delta_count"] = out["count"] - prior["count"]
+        out["delta_amount"] = out["amount"] - prior["amount"]
+    out.index.name = "bucket"
+    return out.reset_index()
+
+
+def top_deals(snapshot_id: int, n: int = 10, db_path=None) -> pd.DataFrame:
+    """Top open deals by amount with risk-flag names joined."""
+    df = _clean(store.get_opportunities(snapshot_id, db_path=db_path))
+    open_df = df[~df["stage_bucket"].isin(CLOSED_BUCKETS)]
+    top = open_df.sort_values("amount", ascending=False).head(n)
+    flags = risk_flags(snapshot_id, db_path=db_path)
+    flag_map: dict[tuple, list[str]] = {}
+    for _, f in flags.iterrows():
+        flag_map.setdefault((f["opportunity_name"], f["account_name"]), []).append(f["rule"])
+    out = top[["opportunity_name", "account_name", "stage", "amount", "close_date", "owner"]].copy()
+    out["flags"] = [
+        ", ".join(flag_map.get((r["opportunity_name"], r["account_name"]), []))
+        for _, r in top.iterrows()
+    ]
+    return out.reset_index(drop=True)
+
+
+def owner_rollup(snapshot_id: int, db_path=None) -> pd.DataFrame:
+    """Per-seller commit / upside / pipeline / at-risk. Groups on the
+    alias-normalized owner column written at import time, so spelling variants
+    of one seller roll up as one row."""
+    df = _clean(store.get_opportunities(snapshot_id, db_path=db_path))
+    open_df, _ = _open_with_category(df)
+    flags = risk_flags(snapshot_id, db_path=db_path)
+    flagged = flags.drop_duplicates(subset=["opportunity_name", "account_name"])
+    at_risk = flagged.groupby("owner")["amount"].sum() if not flagged.empty else pd.Series(dtype="float64")
+
+    rows = []
+    for owner, g in open_df.groupby("owner"):
+        amounts = g["amount"].fillna(0)
+        rows.append({
+            "owner": owner,
+            "commit": float(amounts[g["category"] == "commit"].sum()),
+            "upside": float(amounts[g["category"] == "upside"].sum()),
+            "pipeline": float(amounts[g["category"] == "pipeline"].sum()),
+            "deals": len(g),
+            "at_risk": float(at_risk.get(owner, 0.0)),
+        })
+    return pd.DataFrame(rows).sort_values("commit", ascending=False).reset_index(drop=True)
+
+
+def sub_vertical_split(snapshot_id: int, db_path=None) -> pd.DataFrame | None:
+    """Open pipeline by sub-vertical; None when the field is unmapped."""
+    raw = store.get_opportunities(snapshot_id, db_path=db_path)
+    if raw.empty or raw["sub_vertical"].isna().all():
+        return None
+    df = _clean(raw)
+    open_df = df[~df["stage_bucket"].isin(CLOSED_BUCKETS)]
+    sv = open_df["sub_vertical"].where(open_df["sub_vertical"] != "", "(blank)")
+    g = open_df.assign(sub_vertical=sv).groupby("sub_vertical")
+    out = pd.DataFrame({"count": g.size(), "amount": g["amount"].sum()})
+    return out.sort_values("amount", ascending=False).reset_index()
 
 
 def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:

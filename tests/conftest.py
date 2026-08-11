@@ -38,3 +38,16 @@ def alias_index() -> dict:
 def sample_mapping() -> dict:
     headers = list(ingest.load_csv(SAMPLE_CSV).columns)
     return mapping.suggest_mapping(headers)
+
+
+@pytest.fixture
+def sample_snapshot(db_path, sample_mapping, stage_map, alias_index) -> int:
+    import datetime as dt
+
+    from core import importer
+
+    result = importer.import_snapshot(
+        SAMPLE_CSV, sample_mapping, "auto", stage_map, "wk32",
+        as_of_date=dt.date(2026, 8, 11), db_path=db_path, alias_index=alias_index,
+    )
+    return result.snapshot_id
