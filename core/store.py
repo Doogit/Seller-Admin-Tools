@@ -46,7 +46,26 @@ CREATE TABLE IF NOT EXISTS opportunities (
     {", ".join(f"{c} {'REAL' if c in ('amount', 'probability') else 'TEXT'}" for c in OPP_COLUMNS)}
 );
 CREATE INDEX IF NOT EXISTS idx_opps_snapshot ON opportunities(snapshot_id);
+CREATE TABLE IF NOT EXISTS account_facts (
+    account_name TEXT PRIMARY KEY,
+    account_name_raw TEXT,
+    sub_vertical TEXT,
+    annual_spend REAL,
+    agreement_end_date TEXT,
+    install_base TEXT,
+    incumbent_tools TEXT,
+    known_gaps TEXT,
+    exec_contacts TEXT,
+    regulatory_scope TEXT,
+    updated_at TEXT NOT NULL
+);
 """
+
+ACCOUNT_COLUMNS = [
+    "account_name", "account_name_raw", "sub_vertical", "annual_spend",
+    "agreement_end_date", "install_base", "incumbent_tools", "known_gaps",
+    "exec_contacts", "regulatory_scope",
+]
 
 
 def _connect(db_path=None) -> sqlite3.Connection:
@@ -158,6 +177,35 @@ def write_snapshot(
         snapshot_id = cur.lastrowid
         con.executemany(_OPP_INSERT, _opp_rows(snapshot_id, df))
         return snapshot_id
+
+
+def upsert_account_facts(df: pd.DataFrame, db_path=None) -> int:
+    """Replace-latest-by-account semantics: facts are current state, not
+    history — a re-import of an account overwrites its previous row."""
+    now = dt.datetime.now().isoformat(timespec="seconds")
+    rows = []
+    for _, r in df.iterrows():
+        values = []
+        for col in ACCOUNT_COLUMNS:
+            v = r.get(col)
+            values.append(None if v is None or pd.isna(v) else v)
+        values.append(now)
+        rows.append(values)
+    with _connect(db_path) as con:
+        con.executemany(
+            f"INSERT OR REPLACE INTO account_facts({', '.join(ACCOUNT_COLUMNS)}, updated_at) "
+            f"VALUES({', '.join('?' for _ in range(len(ACCOUNT_COLUMNS) + 1))})",
+            rows,
+        )
+    return len(rows)
+
+
+def load_account_facts(db_path=None) -> pd.DataFrame:
+    with _connect(db_path) as con:
+        rows = con.execute(
+            "SELECT * FROM account_facts ORDER BY account_name"
+        ).fetchall()
+    return pd.DataFrame([dict(r) for r in rows])
 
 
 def list_snapshots(db_path=None) -> pd.DataFrame:

@@ -1,0 +1,82 @@
+# Reference data — verify against current standard text before customer use.
+# Paraphrases are one-line own-words summaries, not regulatory text.
+# capability_category is generic; default_product_label is just the shipped
+# default and is freely editable.
+disclaimer: >-
+  Reference data — verify against current standard text before customer use.
+obligations:
+  - obligation_id: CIP-005-7-R1
+    framework: NERC_CIP
+    paraphrase: Establish electronic security perimeters around BES cyber systems.
+    capability_category: ot_security
+    default_product_label: Defender for OT
+  - obligation_id: CIP-005-7-R2
+    framework: NERC_CIP
+    paraphrase: Control and monitor interactive remote access to BES cyber systems.
+    capability_category: identity
+    default_product_label: Entra
+  - obligation_id: CIP-007-6-R2
+    framework: NERC_CIP
+    paraphrase: Evaluate and apply security patches on a defined cadence.
+    capability_category: patch_mgmt
+    default_product_label: Intune / Azure Update Manager
+  - obligation_id: CIP-007-6-R3
+    framework: NERC_CIP
+    paraphrase: Deter, detect, and prevent malicious code on applicable systems.
+    capability_category: endpoint_protection
+    default_product_label: Defender for Endpoint
+  - obligation_id: CIP-007-6-R4
+    framework: NERC_CIP
+    paraphrase: Log, monitor, and review security events on applicable systems.
+    capability_category: siem
+    default_product_label: Sentinel
+  - obligation_id: CIP-010-4-R1
+    framework: NERC_CIP
+    paraphrase: Track and authorize configuration changes with baseline documentation.
+    capability_category: patch_mgmt
+    default_product_label: Intune / Azure Update Manager
+  - obligation_id: CIP-010-4-R3
+    framework: NERC_CIP
+    paraphrase: Perform periodic vulnerability assessments of applicable systems.
+    capability_category: patch_mgmt
+    default_product_label: Defender Vulnerability Management
+  - obligation_id: CIP-011-3-R1
+    framework: NERC_CIP
+    paraphrase: Identify and protect BES cyber system information in storage and transit.
+    capability_category: data_protection
+    default_product_label: Purview
+  - obligation_id: TSA-SD-Pipeline-2021-02F-III.A
+    framework: TSA_SD
+    paraphrase: Segment IT and OT networks so OT can operate if IT is compromised.
+    capability_category: ot_security
+    default_product_label: Defender for OT
+  - obligation_id: TSA-SD-Pipeline-2021-02F-III.B
+    framework: TSA_SD
+    paraphrase: Enforce access control measures for critical cyber systems.
+    capability_category: identity
+    default_product_label: Entra
+  - obligation_id: TSA-SD-Pipeline-2021-02F-III.C
+    framework: TSA_SD
+    paraphrase: Continuously monitor and detect threats against critical cyber systems.
+    capability_category: siem
+    default_product_label: Sentinel
+  - obligation_id: TSA-SD-Pipeline-2021-02F-III.D
+    framework: TSA_SD
+    paraphrase: Reduce risk of unpatched systems via timely patching of critical systems.
+    capability_category: patch_mgmt
+    default_product_label: Intune / Azure Update Manager
+  - obligation_id: IEC-62443-3-3-SR1
+    framework: IEC_62443
+    paraphrase: Identify and authenticate all users and devices in the control system.
+    capability_category: identity
+    default_product_label: Entra
+  - obligation_id: IEC-62443-3-3-SR3
+    framework: IEC_62443
+    paraphrase: Ensure integrity of control system software and information.
+    capability_category: endpoint_protection
+    default_product_label: Defender for Endpoint
+  - obligation_id: IEC-62443-3-3-SR6
+    framework: IEC_62443
+    paraphrase: Respond to security violations in a timely manner with event collection.
+    capability_category: siem
+    default_product_label: Sentinel

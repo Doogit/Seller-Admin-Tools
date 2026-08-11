@@ -29,6 +29,42 @@ class ImportResult:
     blocking: list[str] = field(default_factory=list)
 
 
+@dataclass
+class AccountImportResult:
+    n_accounts: int = 0
+    warnings: list[str] = field(default_factory=list)
+    blocking: list[str] = field(default_factory=list)
+    date_format_used: str = ""
+
+
+def import_account_facts(
+    file,
+    mapping: dict[str, str | None],
+    date_format: str = "auto",
+    alias_index: dict[str, str] | None = None,
+    db_path=None,
+) -> AccountImportResult:
+    """Import an account-facts CSV (replace-latest-by-account, no snapshots).
+
+    Same load/map/validate pipeline as pipeline imports, against ACCOUNT_SCHEMA.
+    """
+    result = AccountImportResult()
+    df = ingest.load_csv(_read_bytes(file))
+    canonical, problems, resolved = ingest.apply_mapping(
+        df, mapping, date_format, alias_index=alias_index,
+        target_schema=schema.ACCOUNT_SCHEMA,
+    )
+    result.date_format_used = resolved
+    result.warnings.extend(problems)
+    issues = schema.validate_frame(canonical, schema.ACCOUNT_SCHEMA)
+    result.blocking = [i["message"] for i in issues if i["severity"] == schema.BLOCKING]
+    result.warnings.extend(i["message"] for i in issues if i["severity"] == schema.WARNING)
+    if result.blocking:
+        return result
+    result.n_accounts = store.upsert_account_facts(canonical, db_path=db_path)
+    return result
+
+
 def _read_bytes(file) -> bytes:
     if isinstance(file, bytes):
         return file

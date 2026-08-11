@@ -237,6 +237,22 @@ def load_alias_index(path) -> dict[str, str]:
     return index
 
 
+def append_alias(canonical: str, alias: str, path, section: str = "accounts") -> None:
+    """Persist a confirmed alias to config/aliases.yaml (both sides stored in
+    base-normalized form, matching how the index is built)."""
+    p = Path(path)
+    data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    sec = data.setdefault(section, {}) or {}
+    data[section] = sec
+    canon = base_normalize(canonical)
+    entry = sec.setdefault(canon, []) or []
+    alias_norm = base_normalize(alias)
+    if alias_norm not in entry:
+        entry.append(alias_norm)
+    sec[canon] = entry
+    p.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
+
+
 def normalize_name(name: str, alias_index: dict[str, str] | None = None) -> str:
     base = base_normalize(name)
     if alias_index:

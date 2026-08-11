@@ -1,0 +1,6 @@
+Account Name,Sub-Vertical,Annual Spend,Agreement End,Install Base,Incumbent Tools,Known Gaps,Exec Contacts,Regulatory Scope
+Meridian Energy,Power & Utilities,"$1,200,000",6/30/2027,Microsoft Sentinel; Entra ID,CrowdStrike,,Dana Whitfield (CIO); Tom Osei (CISO),NERC_CIP; state_puc
+TransCanyon Pipelines,Pipelines,"$800,000",12/31/2026,Defender for OT,Splunk,TSA-SD-Pipeline-2021-02F-III.D,Robert Chen (VP Ops),TSA_SD
+Cascade Power & Light,Power & Utilities,"$450,000",9/30/2026,,,,Wes Grant (CTO),NERC_CIP; IEC_62443
+Gulf Stream Petroleum,Oil & Gas,"$600,000",3/31/2027,Purview,Splunk,,Colin Reyes (CIO),IEC_62443
+Bluewater Utilities,Power & Utilities,"$300,000",8/15/2027,Purview; Defender for Endpoint,Okta,BADID-999,Maria Santos (CISO),NERC_CIP
