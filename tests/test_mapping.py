@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from core import importer, ingest, mapping, schema, store
 
@@ -68,6 +69,46 @@ def test_blocking_issue_writes_nothing(db_path, sample_path, sample_mapping, sta
     assert result.snapshot_id is None
     assert result.blocking
     assert store.list_snapshots(db_path=db_path).empty
+
+
+def test_import_via_bytes_matches_ui_path(db_path, sample_path, sample_mapping, stage_map):
+    # Home.py passes uploaded bytes, not a path — exercise that branch.
+    result = importer.import_snapshot(
+        sample_path.read_bytes(), sample_mapping, "mdy", stage_map, "wk32",
+        db_path=db_path,
+    )
+    assert result.n_rows == 40
+
+
+def test_duplicate_opportunity_id_warns():
+    df = pd.DataFrame({
+        "account_name": ["a", "b"], "opportunity_name": ["x", "y"],
+        "stage": ["s", "s"], "amount": [1.0, 2.0],
+        "close_date": ["2026-01-01", "2026-01-01"], "owner": ["o", "o"],
+        "opportunity_id": ["OP-1", "OP-1"],
+    })
+    issues = schema.validate_frame(df)
+    assert any("Duplicate opportunity_id" in i["message"] for i in issues)
+
+
+def test_failed_import_writes_nothing_atomically(
+    db_path, sample_path, sample_mapping, stage_map, monkeypatch
+):
+    def boom(snapshot_id, df):
+        raise RuntimeError("injected failure mid-import")
+
+    monkeypatch.setattr(store, "_opp_rows", boom)
+    with pytest.raises(RuntimeError):
+        importer.import_snapshot(
+            sample_path, sample_mapping, "mdy", stage_map, "wk32", db_path=db_path
+        )
+    # no orphan snapshot row -> the file's hash cannot poison the dup guard
+    assert store.list_snapshots(db_path=db_path).empty
+    monkeypatch.undo()
+    ok = importer.import_snapshot(
+        sample_path, sample_mapping, "mdy", stage_map, "wk32", db_path=db_path
+    )
+    assert not ok.skipped and ok.n_rows == 40
 
 
 def test_snapshots_append_only(db_path, sample_path, sample_mapping, stage_map):

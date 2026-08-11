@@ -29,15 +29,6 @@ def make_snapshot(db_path, rows, label, as_of):
     return sid
 
 
-@pytest.fixture
-def sample_snapshot(db_path, sample_path, sample_mapping, stage_map, alias_index):
-    result = importer.import_snapshot(
-        sample_path, sample_mapping, "auto", stage_map, "wk32",
-        as_of_date=dt.date(2026, 8, 11), db_path=db_path, alias_index=alias_index,
-    )
-    return result.snapshot_id
-
-
 # --- rollup ---
 
 def test_rollup_math_on_sample(db_path, sample_snapshot):

@@ -39,7 +39,11 @@ if uploaded is None:
     st.stop()
 
 raw_bytes = uploaded.getvalue()
-df = ingest.load_csv(raw_bytes)
+try:
+    df = ingest.load_csv(raw_bytes)
+except ingest.IngestError as e:
+    st.error(str(e))
+    st.stop()
 
 # 2. Detected headers + preview
 st.subheader("Detected columns")
@@ -95,23 +99,25 @@ with col3:
 override = st.session_state.get("dup_override", False)
 if st.button("Confirm import", type="primary", disabled=blocked or not label):
     profile_id = None
-    if save_as.strip():
-        profile_id = mapping.save_profile(
-            save_as.strip(), field_mapping, stage_assignments, date_format
-        )
+    name = save_as.strip()
+    if name.lower() == "new mapping":
+        st.warning("'New mapping' is a reserved name — profile not saved.")
+    elif name:
+        existing = profiles.get(name)
+        merged_stages = dict(stage_assignments)
+        if existing:
+            # keep assignments for stages absent from this file
+            merged_stages = {**existing["stage_assignments"], **stage_assignments}
+        profile_id = mapping.save_profile(name, field_mapping, merged_stages, date_format)
     result = importer.import_snapshot(
         raw_bytes, field_mapping, date_format, stage_assignments, label,
         as_of_date=as_of, on_duplicate="override" if override else "ask",
         profile_id=profile_id, alias_index=ALIAS_INDEX,
     )
     if result.skipped:
-        dup = result.duplicate_of
-        st.warning(
-            f"Already imported as '{dup['label']}' on {dup['imported_at']}. "
-            "Tick the box below and confirm again to import anyway."
-        )
-        st.checkbox("Import anyway (creates a duplicate snapshot)", key="dup_override")
+        st.session_state["pending_duplicate"] = result.duplicate_of
     else:
+        st.session_state.pop("pending_duplicate", None)
         st.session_state.pop("dup_override", None)
         st.success(
             f"Imported snapshot '{label}': {result.n_rows} rows, "
@@ -119,3 +125,13 @@ if st.button("Confirm import", type="primary", disabled=blocked or not label):
         )
         for w in result.warnings:
             st.warning(w)
+
+# Rendered outside the button branch so the checkbox survives the rerun its
+# own tick triggers — inside the branch Streamlit would drop the widget.
+if st.session_state.get("pending_duplicate"):
+    dup = st.session_state["pending_duplicate"]
+    st.warning(
+        f"Already imported as '{dup['label']}' on {dup['imported_at']}. "
+        "Tick the box and press Confirm import again to import anyway."
+    )
+    st.checkbox("Import anyway (creates a duplicate snapshot)", key="dup_override")

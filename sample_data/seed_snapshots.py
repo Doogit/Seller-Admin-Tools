@@ -93,7 +93,9 @@ def main() -> None:
             as_of_date=as_of, on_duplicate="skip",
             profile_id=profile_id, alias_index=alias_index,
         )
-        if result.skipped:
+        if result.blocking:
+            print(f"{label}: BLOCKED — {'; '.join(result.blocking)}")
+        elif result.skipped:
             print(f"{label}: already imported (skipped)")
         else:
             print(
