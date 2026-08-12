@@ -419,3 +419,25 @@ def test_owner_rollup_accepts_precomputed_flags(db_path, sample_snapshot):
     passed = forecast.owner_rollup(sample_snapshot, db_path=db_path, flags=flags)
     internal = forecast.owner_rollup(sample_snapshot, db_path=db_path)
     pd.testing.assert_frame_equal(passed, internal)
+
+
+def test_snapshot_trend_orders_and_filters(db_path):
+    w1 = make_snapshot(db_path, [opp(opportunity_id="A1", amount=100000.0)],
+                       "w1", "2026-07-01")
+    make_snapshot(db_path, [opp(opportunity_id="A1", amount=200000.0)],
+                  "w2", "2026-08-01")
+    tr = forecast.snapshot_trend(db_path=db_path)
+    assert list(tr.columns) == forecast.TREND_COLUMNS
+    assert tr["as_of_date"].tolist() == ["2026-07-01", "2026-08-01"]
+    # through_id caps the trend at that snapshot's as-of — never a future week
+    tr1 = forecast.snapshot_trend(db_path=db_path, through_id=w1)
+    assert tr1["as_of_date"].tolist() == ["2026-07-01"]
+
+
+def test_stalled_evidence_shows_threshold(db_path):
+    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
+                  "w1", "2026-06-27")
+    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
+                        "w2", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    assert "flags at 45" in flags[flags["rule"] == "stalled"].iloc[0]["evidence"]

@@ -93,7 +93,9 @@ Drafts the weekly commit / upside / risk story from a snapshot:
   `stalled` (stage age past a threshold, measured per opportunity across
   snapshots), `slipped` (close date pushed out), `no_sponsor` (large deal with no
   exec sponsor), and `big_and_late` (large deal closing soon but not late-stage).
-  Each flag carries a plain-English evidence string.
+  Each flag carries a plain-English evidence string (with the firing threshold
+  shown, so it is checkable) plus a configurable **suggested coaching ask** — the
+  one question to put to the rep — editable in `config/risk_rules.yaml`.
 
 The numbers are inserted verbatim; the editable prose stays under your control.
 Export by copy or `.md` download.
@@ -103,7 +105,10 @@ Export by copy or `.md` download.
 ![QBR Assembler — scorecard and native pipeline-by-stage chart](docs/screenshots/2-qbr-assembler.png)
 
 One click from a snapshot to a five-slide `.pptx` (title, scorecard, pipeline-by-
-stage native bar chart, top deals, risks & asks) plus a `.md` appendix. Tables
+stage native bar chart, top deals, risks & asks) plus a `.md` appendix. The
+on-screen view and appendix also carry a **per-seller roll-up** (commit / upside
+/ pipeline / at-risk, alias-normalized) and a **multi-week trend** of commit /
+upside / at-risk across snapshots up to the selected week. Tables
 are row/column-capped and long names truncated so slides never overflow; every
 slide carries a `DRAFT` footer. A consistency-guard test parses the commit figure
 back out of the built deck and asserts it equals the narrative's — the two views
@@ -268,6 +273,6 @@ databases and never touch `data/agents.db`.
 
 ## Not included (by design)
 
-LLM/AI polish of the draft text, a manager roll-up view, a branded deck template,
-multi-user auth, and multi-currency handling are intentionally out of scope for
-this version.
+LLM/AI polish of the draft text, a branded deck template, multi-user auth,
+region-level (vs. seller-level) roll-ups, and multi-currency handling are
+intentionally out of scope for this version.

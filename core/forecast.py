@@ -308,6 +308,35 @@ def owner_rollup(snapshot_id: int, db_path=None, flags=None) -> pd.DataFrame:
     ).sort_values("commit", ascending=False).reset_index(drop=True)
 
 
+TREND_COLUMNS = ["as_of_date", "label", "commit", "upside", "at_risk"]
+
+
+def snapshot_trend(db_path=None, through_id: int | None = None) -> pd.DataFrame:
+    """Commit / upside / at-risk per snapshot in as-of order — the multi-week
+    trend a VP reads to judge whether the desk is improving. One row per
+    snapshot; when `through_id` is given, only snapshots on or before that
+    snapshot's as-of date are included (a QBR must not show future weeks)."""
+    snaps = store.list_snapshots(db_path=db_path)
+    if snaps.empty:
+        return pd.DataFrame(columns=TREND_COLUMNS)
+    snaps = snaps.sort_values(["as_of_date", "id"])
+    if through_id is not None:
+        cutoff = _snapshot_as_of(through_id, db_path=db_path).isoformat()
+        snaps = snaps[snaps["as_of_date"] <= cutoff]
+    rows = []
+    for _, s in snaps.iterrows():
+        sid = int(s["id"])
+        r = bucket_rollup(sid, db_path=db_path)
+        rows.append({
+            "as_of_date": s["as_of_date"],
+            "label": s["label"],
+            "commit": r["commit"],
+            "upside": r["upside"],
+            "at_risk": at_risk_total(risk_flags(sid, db_path=db_path)),
+        })
+    return pd.DataFrame(rows, columns=TREND_COLUMNS)
+
+
 def at_risk_total(flags: pd.DataFrame) -> float:
     """Sum of flagged amounts, one row per opportunity (ID-aware dedup). Single
     source for both the QBR deck scorecard and the page metric row so they never
@@ -401,7 +430,8 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
         observed = (cur_as_of - observed_since).days
         if age >= threshold:
             add("stalled", row,
-                f"in stage '{row['stage']}' for {age} days (since {same_stage_since})")
+                f"in stage '{row['stage']}' for {age} days "
+                f"(since {same_stage_since}; flags at {threshold})")
         elif seen and not moved and observed < threshold:
             # Seen before but not long enough to judge. Brand-new deals (never
             # in any prior) are simply new, not "insufficient history".
@@ -428,7 +458,8 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
             if c_close and p_close:
                 delta = (dt.date.fromisoformat(c_close) - dt.date.fromisoformat(p_close)).days
                 if delta >= slip_days:
-                    add("slipped", row, f"close date moved {p_close} → {c_close} (+{delta}d)")
+                    add("slipped", row,
+                        f"close date moved {p_close} → {c_close} (+{delta}d, flags at {slip_days}d)")
     else:
         notes.append("slipped: no prior snapshot — rule skipped.")
 

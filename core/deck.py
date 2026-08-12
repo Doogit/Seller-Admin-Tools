@@ -39,6 +39,7 @@ def gather(snapshot_id: int, prior_id: int | None, meta: dict, db_path=None) -> 
         "stage_dist": forecast.stage_distribution(snapshot_id, prior_id, db_path=db_path),
         "top": forecast.top_deals(snapshot_id, db_path=db_path, flags=flags),
         "owner_rollup": forecast.owner_rollup(snapshot_id, db_path=db_path, flags=flags),
+        "trend": forecast.snapshot_trend(db_path=db_path, through_id=snapshot_id),
         "sub_vertical": forecast.sub_vertical_split(snapshot_id, db_path=db_path),
         "flags": flags,
         "at_risk": at_risk,
@@ -180,13 +181,21 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
         tf.text = "No risk flags this period."
     else:
         first = True
-        for _, f in flags.head(8).iterrows():
+        shown = flags.head(8)
+        for _, f in shown.iterrows():
             p = tf.paragraphs[0] if first else tf.add_paragraph()
             first = False
             p.text = f"• {styles.truncate(f['opportunity_name'])} " \
                      f"({fmt_money(f['amount']) if pd.notna(f['amount']) else '—'}): {f['evidence']}"
             p.font.size = Pt(styles.BODY_SIZE_PT)
             p.font.name = styles.FONT_NAME
+        remainder = len(flags) - len(shown)
+        if remainder > 0:
+            p = tf.add_paragraph()
+            p.text = f"…and {remainder} more flagged deal(s) — see the .md appendix."
+            p.font.size = Pt(styles.BODY_SIZE_PT)
+            p.font.name = styles.FONT_NAME
+            p.font.color.rgb = RGBColor(*styles.MUTED_RGB)
     asks = s.shapes.add_textbox(Inches(8.2), Inches(1.2), Inches(4.6), Inches(5))
     tf = asks.text_frame
     tf.text = "Asks"
@@ -222,8 +231,18 @@ def build_md(snapshot_id: int, prior_id: int | None = None, meta: dict | None = 
         "- Coverage: " + (f"{d['coverage']:.1f}x" if d["coverage"] else "— (no quota)"),
         f"- At risk: {fmt_money(d['at_risk'])}",
         "",
-        "## Pipeline by stage",
     ]
+    trend = d.get("trend")
+    if trend is not None and len(trend) >= 2:
+        lines += ["## Trend (commit / upside / at-risk by week)",
+                  "| Week | Commit | Upside | At risk |", "|---|---|---|---|"]
+        for _, r in trend.iterrows():
+            lines.append(
+                f"| {r['label']} ({r['as_of_date']}) | {fmt_money(r['commit'])} "
+                f"| {fmt_money(r['upside'])} | {fmt_money(r['at_risk'])} |"
+            )
+        lines.append("")
+    lines += ["## Pipeline by stage"]
     for _, r in d["stage_dist"].iterrows():
         delta = f" (Δ {fmt_money(r['delta_amount'])})" if "delta_amount" in r else ""
         lines.append(f"- {r['bucket']}: {int(r['count'])} deals, {fmt_money(r['amount'])}{delta}")
