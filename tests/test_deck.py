@@ -196,3 +196,9 @@ def test_deck_nan_amount_renders_blank_not_dollar_nan(db_path):
     prs = Presentation(deck.build_pptx(sid, None, {}, db_path=db_path))
     texts = [t for slide in prs.slides for t in _slide_texts(slide)]
     assert not any("nan" in t.lower() for t in texts)
+
+
+def test_build_md_has_by_seller(db_path, sample_snapshot):
+    md = deck.build_md(sample_snapshot, None, {"team": "Energy", "period": "wk32"},
+                       db_path=db_path)
+    assert "## By seller" in md

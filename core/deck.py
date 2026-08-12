@@ -38,6 +38,7 @@ def gather(snapshot_id: int, prior_id: int | None, meta: dict, db_path=None) -> 
         "prior_rollup": prior_rollup,
         "stage_dist": forecast.stage_distribution(snapshot_id, prior_id, db_path=db_path),
         "top": forecast.top_deals(snapshot_id, db_path=db_path, flags=flags),
+        "owner_rollup": forecast.owner_rollup(snapshot_id, db_path=db_path, flags=flags),
         "sub_vertical": forecast.sub_vertical_split(snapshot_id, db_path=db_path),
         "flags": flags,
         "at_risk": at_risk,
@@ -233,6 +234,16 @@ def build_md(snapshot_id: int, prior_id: int | None = None, meta: dict | None = 
             f"| {r['opportunity_name']} | {r['account_name']} | {r['stage']} "
             f"| {fmt_money(r['amount']) if pd.notna(r['amount']) else ''} | {r['close_date']} |"
         )
+    owners = d.get("owner_rollup")
+    if owners is not None and not owners.empty:
+        lines += ["", "## By seller",
+                  "| Owner | Commit | Upside | Pipeline | Deals | At risk |",
+                  "|---|---|---|---|---|---|"]
+        for _, r in owners.iterrows():
+            lines.append(
+                f"| {r['owner']} | {fmt_money(r['commit'])} | {fmt_money(r['upside'])} "
+                f"| {fmt_money(r['pipeline'])} | {int(r['deals'])} | {fmt_money(r['at_risk'])} |"
+            )
     if d["sub_vertical"] is not None:
         lines += ["", "## Sub-vertical split"]
         for _, r in d["sub_vertical"].iterrows():

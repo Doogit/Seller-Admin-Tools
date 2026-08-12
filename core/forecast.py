@@ -25,7 +25,7 @@ STAGE_TO_CATEGORY = {"late": "commit", "mid": "upside", "early": "pipeline"}
 
 DELTA_COLUMNS = ["change_type", "opportunity_name", "account_name", "owner", "amount", "detail"]
 FLAG_COLUMNS = ["rule", "opportunity_name", "account_name", "owner", "amount", "evidence",
-                "opportunity_id"]
+                "action", "opportunity_id"]
 
 
 def _load_rules(rules_path=None) -> dict:
@@ -280,13 +280,15 @@ def top_deals(snapshot_id: int, n: int = 10, db_path=None, flags=None) -> pd.Dat
     return out.reset_index(drop=True)
 
 
-def owner_rollup(snapshot_id: int, db_path=None) -> pd.DataFrame:
+def owner_rollup(snapshot_id: int, db_path=None, flags=None) -> pd.DataFrame:
     """Per-seller commit / upside / pipeline / at-risk. Groups on the
     alias-normalized owner column written at import time, so spelling variants
-    of one seller roll up as one row."""
+    of one seller roll up as one row. Pass a precomputed `flags` frame to avoid
+    recomputing risk_flags (it walks every prior snapshot)."""
     df = _clean(store.get_opportunities(snapshot_id, db_path=db_path))
     open_df, _ = _open_with_category(df)
-    flags = risk_flags(snapshot_id, db_path=db_path)
+    if flags is None:
+        flags = risk_flags(snapshot_id, db_path=db_path)
     flagged = dedup_flags(flags)
     at_risk = flagged.groupby("owner")["amount"].sum() if not flagged.empty else pd.Series(dtype="float64")
 
@@ -369,6 +371,7 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
             "owner": row["owner"],
             "amount": row["amount"],
             "evidence": evidence,
+            "action": (rules.get(rule) or {}).get("action", ""),
         })
 
     # stalled — walk snapshots backward per opportunity (consecutive run)

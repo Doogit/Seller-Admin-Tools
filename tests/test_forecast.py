@@ -397,3 +397,25 @@ def test_narrative_offline_socket_guard(db_path, sample_snapshot, monkeypatch):
     flags = forecast.risk_flags(sample_snapshot, db_path=db_path)
     sections = narrative.draft(rollup, None, flags)
     assert sections["commit"] and sections["upside"] and sections["risk"]
+
+
+def test_risk_flags_carry_coaching_action(db_path):
+    # Every flag row carries the configured coaching ask so the manager sees the
+    # one question to put to the rep, not just the evidence.
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="A1", opportunity_name="Renewal", amount=600000.0,
+            exec_sponsor="", owner="kevin dugas"),
+    ], "w1", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    assert "action" in forecast.FLAG_COLUMNS
+    ns = flags[flags["rule"] == "no_sponsor"].iloc[0]
+    assert ns["action"].strip()  # non-empty, sourced from risk_rules.yaml
+
+
+def test_owner_rollup_accepts_precomputed_flags(db_path, sample_snapshot):
+    # Passing flags in must match computing them internally (deck.gather threads
+    # the single risk_flags pass through owner_rollup to avoid recompute).
+    flags = forecast.risk_flags(sample_snapshot, db_path=db_path)
+    passed = forecast.owner_rollup(sample_snapshot, db_path=db_path, flags=flags)
+    internal = forecast.owner_rollup(sample_snapshot, db_path=db_path)
+    pd.testing.assert_frame_equal(passed, internal)

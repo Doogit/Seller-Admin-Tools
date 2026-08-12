@@ -67,6 +67,9 @@ else:
     st.subheader("Sub-vertical split")
     st.dataframe(sv, width="stretch", hide_index=True)
 
+st.subheader("By seller")
+ui.owner_table(data["owner_rollup"])
+
 st.subheader("Top deals")
 st.dataframe(data["top"], width="stretch", hide_index=True)
 

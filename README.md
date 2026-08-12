@@ -49,11 +49,33 @@ The foundation every tool builds on. Upload any pipeline CSV; the app:
    re-import, and stores the rows as an append-only snapshot (keyed by file hash,
    so re-importing the same file is caught).
 
-The canonical schema has six required fields (`account_name`,
-`opportunity_name`, `stage`, `amount`, `close_date`, `owner`) and optional fields
-that unlock richer analysis when present (`opportunity_id` — the join key for
-week-over-week deltas — plus `forecast_category`, `probability`, `product`,
-`sub_vertical`, `exec_sponsor`, and date fields).
+#### Pipeline column contract
+
+Map your export's columns to these canonical fields. The six required fields are
+the minimum to import; each optional field unlocks a specific capability, so you
+only map what you have.
+
+| Canonical field | Req? | Type | Unlocks / notes |
+|---|---|---|---|
+| `account_name` | ✅ | text | Rollups, account-plan join (normalized; raw kept) |
+| `opportunity_name` | ✅ | text | Deal identity in every artifact |
+| `stage` | ✅ | text | Stage buckets → commit/upside/pipeline, stalled/late flags |
+| `amount` | ✅ | money | Every dollar total (parenthesized negatives supported) |
+| `close_date` | ✅ | date | Slip detection, `big_and_late` flag |
+| `owner` | ✅ | text | Per-seller rollup (alias-normalized) |
+| `opportunity_id` | — | text | **Join key for week-over-week deltas** — without it, rows match on normalized name (strongly recommended) |
+| `forecast_category` | — | text | `commit`/`upside`/`pipeline` directly (else derived from stage) |
+| `probability` | — | number | Win probability 0–100 |
+| `product` | — | text | Account-plan whitespace crosswalk |
+| `sub_vertical` | — | text | Sub-vertical split on the QBR |
+| `exec_sponsor` | — | text | `no_sponsor` risk flag (skipped if unmapped) |
+| `last_activity_date`, `created_date` | — | date | Reserved for future age/activity rules |
+
+Types: **money** accepts `$`, thousands separators, and parenthesized negatives;
+**date** is resolved once for the file (auto, US, International, or ISO) with a
+live preview. Unmapped required fields **block** the import; data-quality issues
+(bad dates, negative amounts, blank/duplicate IDs) are **warnings** — rows still
+import, with the problem surfaced.
 
 ### 1. Forecast Narrative
 
