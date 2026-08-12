@@ -57,7 +57,7 @@ Optional fields (mapping screen offers them; tools degrade gracefully if absent)
 | exec_sponsor | str | Tool 3 risk detection |
 | created_date | date | stage-aging calc |
 
-Stage normalization: `config/stage_map.yaml` maps raw stage strings → canonical buckets `early | mid | late | closed_won | closed_lost`. Ship a default with generic labels AND common numbered enterprise-stage labels (01 Inspire, 02 Design, 03 Empower, 04 Achieve, 05 Realize) as examples. Unmapped stages surface in the UI for one-click assignment; assignments persist to the profile.
+Stage normalization: `config/stage_map.yaml` maps raw stage strings → canonical buckets `early | mid | late | closed_won | closed_lost`. Ship a default with generic labels AND common numbered enterprise-stage labels (01 Qualify, 02 Develop, 03 Propose, 04 Commit, 05 Closed Won) as examples. Unmapped stages surface in the UI for one-click assignment; assignments persist to the profile.
 
 ## Repo layout to create
 ```

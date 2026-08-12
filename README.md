@@ -105,7 +105,7 @@ share `core/forecast`, so they cannot drift.
 - late: 6 deals, $8.2M (Δ $6.2M)
 
 ## Risks & asks
-- Pipeline SCADA Security ($2.1M): in stage '04 Achieve' for 49 days (since 2026-06-23)
+- Pipeline SCADA Security ($2.1M): in stage '04 Commit' for 49 days (since 2026-06-23)
 - Identity Consolidation ($750K): no exec sponsor on a $750K deal
 - TSA Directive Gap Closure ($690K): close date moved 2026-08-20 → 2026-11-20 (+92d)
 ```

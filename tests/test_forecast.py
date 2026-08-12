@@ -11,7 +11,7 @@ def opp(**kw):
     base = {
         "account_name": "acme power", "account_name_raw": "Acme Power",
         "opportunity_name": "Deal", "opportunity_id": "",
-        "stage": "02 Design", "stage_bucket": "mid",
+        "stage": "02 Develop", "stage_bucket": "mid",
         "amount": 100000.0, "close_date": "2026-12-01",
         "owner": "kevin dugas", "owner_raw": "Kevin Dugas",
         "forecast_category": None, "probability": None,
@@ -41,7 +41,7 @@ def test_rollup_math_on_sample(db_path, sample_snapshot):
     assert rollup["total_open"] == pytest.approx(
         rollup["commit"] + rollup["upside"] + rollup["pipeline"]
     )
-    # closed_won (05 Realize) row excluded from open totals
+    # closed_won (05 Closed Won) row excluded from open totals
     df = store.get_opportunities(sample_snapshot, db_path=db_path)
     open_sum = df[~df["stage_bucket"].isin(["closed_won", "closed_lost"])]["amount"].sum()
     assert rollup["total_open"] + rollup["unclassified"] == pytest.approx(open_sum)
@@ -76,12 +76,12 @@ def test_unmatched_bucket_when_no_id_and_names_diverge(db_path):
 
 def test_mixed_id_and_name_matching(db_path):
     prior = make_snapshot(db_path, [
-        opp(opportunity_id="A1", opportunity_name="ID Deal", stage="02 Design"),
+        opp(opportunity_id="A1", opportunity_name="ID Deal", stage="02 Develop"),
         opp(opportunity_name="Name Deal", amount=50000.0),
         opp(opportunity_id="G1", opportunity_name="Gone Deal"),
     ], "w1", "2026-08-01")
     cur = make_snapshot(db_path, [
-        opp(opportunity_id="A1", opportunity_name="ID Deal", stage="03 Empower",
+        opp(opportunity_id="A1", opportunity_name="ID Deal", stage="03 Propose",
             stage_bucket="mid"),
         opp(opportunity_name="Name Deal", amount=75000.0),
         opp(opportunity_id="N1", opportunity_name="Brand New"),
@@ -101,15 +101,15 @@ def test_duplicate_id_demotes_to_name_join(db_path):
     # key would cross-wire them and report phantom moves on an unchanged pair;
     # demoting duplicates to the name-join path pins each row to its true match.
     prior = make_snapshot(db_path, [
-        opp(opportunity_id="D1", opportunity_name="Dup A", stage="02 Design"),
-        opp(opportunity_id="D1", opportunity_name="Dup B", stage="02 Design"),
-        opp(opportunity_id="U1", opportunity_name="Unique Deal", stage="02 Design"),
+        opp(opportunity_id="D1", opportunity_name="Dup A", stage="02 Develop"),
+        opp(opportunity_id="D1", opportunity_name="Dup B", stage="02 Develop"),
+        opp(opportunity_id="U1", opportunity_name="Unique Deal", stage="02 Develop"),
     ], "w1", "2026-08-01")
     cur = make_snapshot(db_path, [
-        opp(opportunity_id="D1", opportunity_name="Dup A", stage="02 Design"),
-        opp(opportunity_id="D1", opportunity_name="Dup B", stage="03 Empower",
+        opp(opportunity_id="D1", opportunity_name="Dup A", stage="02 Develop"),
+        opp(opportunity_id="D1", opportunity_name="Dup B", stage="03 Propose",
             stage_bucket="mid"),
-        opp(opportunity_id="U1", opportunity_name="Unique Deal", stage="02 Design"),
+        opp(opportunity_id="U1", opportunity_name="Unique Deal", stage="02 Develop"),
     ], "w2", "2026-08-08")
     deltas = forecast.wow_delta(cur, prior, db_path=db_path)
     by_type = deltas.groupby("change_type")["opportunity_name"].apply(list).to_dict()
@@ -130,9 +130,9 @@ def test_slip_detected(db_path):
 # --- risk flags ---
 
 def test_stalled_fires_at_45_day_boundary(db_path):
-    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                   "w1", "2026-06-27")  # exactly 45 days before as-of
-    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                         "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     stalled = flags[flags["rule"] == "stalled"]
@@ -141,9 +141,9 @@ def test_stalled_fires_at_45_day_boundary(db_path):
 
 
 def test_stalled_insufficient_history_reports_not_fires(db_path):
-    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                   "w1", "2026-07-12")  # 30 days observed
-    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                         "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     assert flags[flags["rule"] == "stalled"].empty
@@ -151,9 +151,9 @@ def test_stalled_insufficient_history_reports_not_fires(db_path):
 
 
 def test_stalled_silent_when_stage_advanced(db_path):
-    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                   "w1", "2026-06-01")  # 71 days back, but stage changed since
-    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="03 Empower")],
+    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="03 Propose")],
                         "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     assert flags[flags["rule"] == "stalled"].empty
@@ -251,11 +251,11 @@ def test_risk_flags_demote_ambiguous_duplicate_ids(db_path):
     # Prior snapshot has two rows sharing id "X" (last-wins would pick the
     # stage-unchanged one and mis-fire stalled). Ambiguous keys are demoted.
     make_snapshot(db_path, [
-        opp(opportunity_id="X", opportunity_name="Dup A", stage="03 Empower"),
-        opp(opportunity_id="X", opportunity_name="Dup B", stage="02 Design"),
+        opp(opportunity_id="X", opportunity_name="Dup A", stage="03 Propose"),
+        opp(opportunity_id="X", opportunity_name="Dup B", stage="02 Develop"),
     ], "w1", "2026-06-01")  # 71 days back
     cur = make_snapshot(db_path, [
-        opp(opportunity_id="X", opportunity_name="Reconciled", stage="02 Design"),
+        opp(opportunity_id="X", opportunity_name="Reconciled", stage="02 Develop"),
     ], "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     assert flags[flags["rule"] == "stalled"].empty  # no trusted history -> no flag
@@ -264,11 +264,11 @@ def test_risk_flags_demote_ambiguous_duplicate_ids(db_path):
 def test_stalled_note_excludes_brand_new_opps(db_path):
     # OLD is seen-but-short (counts); NEW is absent from every prior (brand-new,
     # not "insufficient history").
-    make_snapshot(db_path, [opp(opportunity_id="OLD", stage="02 Design")],
+    make_snapshot(db_path, [opp(opportunity_id="OLD", stage="02 Develop")],
                   "w1", "2026-07-12")  # 30 days observed
     cur = make_snapshot(db_path, [
-        opp(opportunity_id="OLD", stage="02 Design"),
-        opp(opportunity_id="NEW", opportunity_name="Brand New", stage="02 Design"),
+        opp(opportunity_id="OLD", stage="02 Develop"),
+        opp(opportunity_id="NEW", opportunity_name="Brand New", stage="02 Develop"),
     ], "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     note = " ".join(flags.attrs["notes"])
