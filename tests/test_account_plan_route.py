@@ -101,6 +101,15 @@ def test_plan_fragment_for_selected_account(env, client):
     assert 'id="plan"' in r.text
 
 
+def test_plan_fragment_resolves_stale_query_values(env, client):
+    _seed(env["db"])
+    r = client.get(f"{BASE}/plan",
+                   params={"account_name": "missing", "snapshot_id": "999999"})
+    assert r.status_code == 200
+    assert 'id="plan"' in r.text
+    assert "Traceback" not in r.text
+
+
 def test_download_md_streams_plan(env, client):
     sid = _seed(env["db"])
     r = client.get(f"{BASE}/export/md",
@@ -109,6 +118,13 @@ def test_download_md_streams_plan(env, client):
     assert r.text.startswith("# Account plan — Meridian Energy")
     assert "account_plan_meridian_energy_" in r.headers["content-disposition"]
     assert r.headers["content-disposition"].endswith('.md"')
+
+
+def test_download_without_facts_returns_404(env, client):
+    r = client.get(f"{BASE}/export/md",
+                   params={"account_name": "missing", "snapshot_id": "999999"})
+    assert r.status_code == 404
+    assert r.text == "No account facts imported."
 
 
 def test_download_pptx_streams_bytes(env, client):

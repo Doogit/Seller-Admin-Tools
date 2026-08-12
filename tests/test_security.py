@@ -24,6 +24,7 @@ def _status(
     host: str = OK_HOST,
     headers: dict | None = None,
     scheme: str = "http",
+    allow_remote: bool = False,
 ) -> int:
     raw = [(b"host", host.encode())]
     for k, v in (headers or {}).items():
@@ -37,7 +38,7 @@ def _status(
     async def receive():
         return {"type": "http.request", "body": b"", "more_body": False}
 
-    asyncio.run(LocalOnlyMiddleware(_inner_app)(scope, receive, send))
+    asyncio.run(LocalOnlyMiddleware(_inner_app, allow_remote=allow_remote)(scope, receive, send))
     return next(m["status"] for m in sent if m["type"] == "http.response.start")
 
 
@@ -55,12 +56,30 @@ def test_get_from_lan_host_blocked():
     assert _status("GET", host="evil.example.com") == 403
 
 
+def test_remote_demo_allows_non_loopback_host():
+    assert _status("GET", host="demo.example.com", allow_remote=True) == 200
+
+
 def test_post_same_origin_allowed():
     assert _status("POST", host=OK_HOST, headers={"origin": OK_ORIGIN}) == 200
 
 
 def test_post_cross_site_origin_blocked():
     assert _status("POST", host=OK_HOST, headers={"origin": "http://evil.example.com"}) == 403
+
+
+def test_remote_demo_keeps_same_origin_post_guard():
+    headers = {
+        "origin": "https://demo.example.com",
+        "x-forwarded-proto": "https",
+    }
+    assert _status("POST", host="demo.example.com", headers=headers, allow_remote=True) == 200
+    assert _status(
+        "POST",
+        host="demo.example.com",
+        headers={"origin": "https://evil.example.com", "x-forwarded-proto": "https"},
+        allow_remote=True,
+    ) == 403
 
 
 def test_post_from_different_loopback_origin_blocked():

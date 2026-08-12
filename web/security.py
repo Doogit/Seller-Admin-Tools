@@ -28,6 +28,11 @@ serve() defaults to 0.0.0.0, so pass host explicitly if you use it):
 
     uvicorn web.server:app --host 127.0.0.1        # or:  serve(host="127.0.0.1")
 
+Docker/App Service demo images can opt into remote hosts explicitly via
+web.server's SELLER_ADMIN_TOOLS_ALLOW_REMOTE switch. In that mode, the Host
+loopback check is relaxed but the same-origin check for mutating requests still
+applies.
+
 Pure ASGI (no framework-version coupling): usable via Middleware(...),
 app.add_middleware(LocalOnlyMiddleware), or by wrapping the ASGI app directly.
 """
@@ -91,9 +96,15 @@ class LocalOnlyMiddleware:
     """Refuse any request that isn't addressed to (Host) and, for state changes,
     originated from (Origin/Referer) this machine over loopback."""
 
-    def __init__(self, app, allowed_hosts: frozenset[str] = LOOPBACK_HOSTS):
+    def __init__(
+        self,
+        app,
+        allowed_hosts: frozenset[str] = LOOPBACK_HOSTS,
+        allow_remote: bool = False,
+    ):
         self.app = app
         self.allowed_hosts = allowed_hosts
+        self.allow_remote = allow_remote
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -106,7 +117,8 @@ class LocalOnlyMiddleware:
         # 1. Host must be loopback - blocks LAN access and DNS-rebinding, since a
         #    rebound name or LAN IP arrives in the Host header, not 127.0.0.1.
         host = headers.get("host", "")
-        if _hostname(host) not in self.allowed_hosts:
+        hostname = _hostname(host)
+        if hostname is None or (not self.allow_remote and hostname not in self.allowed_hosts):
             await self._deny(send, "Host header is not a local address.")
             return
 
@@ -115,7 +127,8 @@ class LocalOnlyMiddleware:
         #    methods; absence is treated as untrusted.
         if scope["method"] in MUTATING_METHODS:
             source = headers.get("origin") or headers.get("referer")
-            if not _same_origin(source or "", host, scope.get("scheme", "http")):
+            scheme = _request_scheme(scope, headers)
+            if not _same_origin(source or "", host, scheme):
                 await self._deny(send, "Cross-site request rejected.")
                 return
 
@@ -129,3 +142,15 @@ class LocalOnlyMiddleware:
             "headers": [(b"content-type", b"text/plain; charset=utf-8")],
         })
         await send({"type": "http.response.body", "body": reason.encode("utf-8")})
+
+
+def _request_scheme(scope, headers: dict[str, str]) -> str:
+    """Use the browser-facing scheme when behind a reverse proxy.
+
+    App Service terminates TLS before forwarding to the container, so the ASGI
+    scope is often ``http`` while the browser's Origin is ``https``. Matching on
+    X-Forwarded-Proto keeps same-origin POSTs working without trusting cross-site
+    origins.
+    """
+    forwarded = (headers.get("x-forwarded-proto") or "").split(",", 1)[0].strip()
+    return forwarded or scope.get("scheme", "http")

@@ -222,8 +222,9 @@ upload `sample_data/energy_pipeline_sample.csv` yourself) → **Forecast Narrati
 → **QBR Assembler** → **Account Plan**.
 
 > The tool app is for **single-user local use** and is bound to loopback
-> (`127.0.0.1`) above. A Host/Origin guard on state-changing requests ships with
-> the separate security-hardening change; nothing is ever sent off the machine.
+> (`127.0.0.1`) above. Its Host/Origin guard blocks non-local hosts by default
+> and checks same-origin state-changing requests; nothing is ever sent off the
+> machine.
 
 > The screenshots above show the tools running against the bundled sample data,
 > and the `<details>` blocks show real, reproducible export output.
@@ -239,7 +240,9 @@ az login
 ./deploy/azure-deploy.ps1
 ```
 
-It serves synthetic data with no auth by default; see
+It serves the seeded FastHTML tools (Forecast Narrative, QBR Assembler, Account
+Plan) with synthetic data and no auth by default; Home/ingest remains a separate
+local Streamlit entry. See
 [deploy/README.md](deploy/README.md) for the one-command Entra (Microsoft
 sign-in) gate to add before using real data. The `Dockerfile` also runs anywhere
 Docker does (`docker build -t seller-admin-tools . && docker run -p 8000:8000

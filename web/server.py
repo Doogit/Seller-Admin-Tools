@@ -11,6 +11,7 @@ Run: uvicorn web.server:app --reload   (styles: make css)
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -28,6 +29,7 @@ from web.routes import account_plan, forecast_narrative, qbr  # noqa: E402
 from web.security import LocalOnlyMiddleware  # noqa: E402
 
 STATIC_DIR = REPO_ROOT / "web" / "static"
+ALLOW_REMOTE = os.environ.get("SELLER_ADMIN_TOOLS_ALLOW_REMOTE") == "1"
 
 app, rt = fast_app(
     pico=False,             # suppress the third-party Pico CDN fork
@@ -49,10 +51,12 @@ for _h in app.hdrs:
     if _EXTERNAL.search(_xml):
         raise RuntimeError(f"External header URL detected (offline invariant broken): {_xml}")
 
-# Local-only guard: reject any request whose Host isn't loopback, and any
-# state-changing request that isn't same-origin (CSRF-to-localhost / DNS
-# rebinding). See web/security.py.
-app.add_middleware(LocalOnlyMiddleware)
+# Local-only guard by default: reject any request whose Host isn't loopback, and
+# any state-changing request that isn't same-origin (CSRF-to-localhost / DNS
+# rebinding). Docker/App Service demo images set SELLER_ADMIN_TOOLS_ALLOW_REMOTE=1
+# to permit public synthetic-data GETs while retaining same-origin checks on
+# mutating requests. See web/security.py.
+app.add_middleware(LocalOnlyMiddleware, allow_remote=ALLOW_REMOTE)
 
 
 @rt("/")

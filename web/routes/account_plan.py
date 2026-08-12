@@ -306,7 +306,19 @@ def _full_page():
 
 
 def _snapshot_from_form(value: str | None):
-    return _params.cid(value)  # reuse int-or-None coercion
+    sid = _params.cid(value)  # reuse int-or-None coercion
+    valid = [i for i, _ in vm.snapshot_options()]
+    if not valid:
+        return None
+    return sid if sid in valid else valid[0]
+
+
+def _account_from_form(value: str | None) -> str | None:
+    accounts = vm.account_options()
+    if not accounts:
+        return None
+    valid = {name for name, _ in accounts}
+    return value if value in valid else accounts[0][0]
 
 
 # --- registration ------------------------------------------------------------
@@ -366,8 +378,11 @@ def register(rt):
 
     @rt(f"{BASE}/plan")
     def get(account_name: str = "", snapshot_id: str = ""):
-        return _plan(vm.build(account_name, _snapshot_from_form(snapshot_id)),
-                     account_name, _snapshot_from_form(snapshot_id))
+        account_name = _account_from_form(account_name)
+        if account_name is None:
+            return Div(P(vm.EMPTY_STATE, cls="text-sm text-slate-600"), id="plan")
+        sid = _snapshot_from_form(snapshot_id)
+        return _plan(vm.build(account_name, sid), account_name, sid)
 
     @rt(f"{BASE}/alias", methods=["post"])
     def post(account_name: str = "", pick: str = "", snapshot_id: str = ""):
@@ -389,6 +404,9 @@ def register(rt):
 
     @rt(f"{BASE}/export/pptx")
     def get(account_name: str = "", snapshot_id: str = ""):
+        account_name = _account_from_form(account_name)
+        if account_name is None:
+            return Response("No account facts imported.", status_code=404)
         sections, disclaimer = vm.export_inputs(account_name, _snapshot_from_form(snapshot_id))
         buf = plan.plan_pptx(sections, disclaimer)
         fname = f"account_plan_{vm.safe_name(sections['account_display'])}_{_stamp()}.pptx"
@@ -399,6 +417,9 @@ def register(rt):
 
     @rt(f"{BASE}/export/md")
     def get(account_name: str = "", snapshot_id: str = ""):
+        account_name = _account_from_form(account_name)
+        if account_name is None:
+            return Response("No account facts imported.", status_code=404)
         sections, disclaimer = vm.export_inputs(account_name, _snapshot_from_form(snapshot_id))
         md = plan.plan_md(sections, disclaimer)
         fname = f"account_plan_{vm.safe_name(sections['account_display'])}_{_stamp()}.md"
