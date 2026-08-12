@@ -234,14 +234,17 @@ def stage_distribution(snapshot_id: int, prior_id: int | None = None, db_path=No
     return out.reset_index()
 
 
-def top_deals(snapshot_id: int, n: int = 10, db_path=None) -> pd.DataFrame:
-    """Top open deals by amount with risk-flag names joined."""
+def top_deals(snapshot_id: int, n: int = 10, db_path=None, flags=None) -> pd.DataFrame:
+    """Top open deals by amount with risk-flag names joined. Pass a precomputed
+    `flags` frame to avoid recomputing risk_flags (it walks every prior
+    snapshot) when the caller already has it."""
     df = _clean(store.get_opportunities(snapshot_id, db_path=db_path))
     open_df = df[~df["stage_bucket"].isin(CLOSED_BUCKETS)]
     top = open_df.sort_values(
         ["amount", "account_name", "opportunity_name"], ascending=[False, True, True]
     ).head(n)
-    flags = risk_flags(snapshot_id, db_path=db_path)
+    if flags is None:
+        flags = risk_flags(snapshot_id, db_path=db_path)
     flag_map: dict[tuple, list[str]] = {}
     for _, f in flags.iterrows():
         flag_map.setdefault((f["opportunity_name"], f["account_name"]), []).append(f["rule"])

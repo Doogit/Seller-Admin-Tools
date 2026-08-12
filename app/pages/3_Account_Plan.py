@@ -110,6 +110,7 @@ if pipeline_df is not None and not pipeline_df.empty:
                 renamed = facts[facts["account_name"] == account_name].copy()
                 renamed["account_name"] = pick
                 store.upsert_account_facts(renamed)
+                store.delete_account_facts(account_name)  # drop the old-name row
                 st.success(
                     f"Alias saved to config/aliases.yaml — '{account_name}' now maps "
                     f"to '{pick}'."

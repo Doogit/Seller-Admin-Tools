@@ -24,7 +24,10 @@ SLIDE_W = Inches(13.333)
 SLIDE_H = Inches(7.5)
 
 
-def _gather(snapshot_id: int, prior_id: int | None, meta: dict, db_path=None) -> dict:
+def gather(snapshot_id: int, prior_id: int | None, meta: dict, db_path=None) -> dict:
+    """Compute every analytic the deck (and the QBR page) needs, once. risk_flags
+    is the expensive call — compute it here and thread it into top_deals so the
+    page can render + build the .pptx + .md from a single pass."""
     rollup = forecast.bucket_rollup(snapshot_id, db_path=db_path)
     prior_rollup = forecast.bucket_rollup(prior_id, db_path=db_path) if prior_id else None
     flags = forecast.risk_flags(snapshot_id, db_path=db_path)
@@ -34,7 +37,7 @@ def _gather(snapshot_id: int, prior_id: int | None, meta: dict, db_path=None) ->
         "rollup": rollup,
         "prior_rollup": prior_rollup,
         "stage_dist": forecast.stage_distribution(snapshot_id, prior_id, db_path=db_path),
-        "top": forecast.top_deals(snapshot_id, db_path=db_path),
+        "top": forecast.top_deals(snapshot_id, db_path=db_path, flags=flags),
         "sub_vertical": forecast.sub_vertical_split(snapshot_id, db_path=db_path),
         "flags": flags,
         "at_risk": at_risk,
@@ -52,7 +55,7 @@ def _arrow(current: float, prior: float | None) -> str:
     return " ▬ flat"
 
 
-def _add_footer(slide) -> None:
+def add_footer(slide) -> None:
     box = slide.shapes.add_textbox(Inches(0.3), SLIDE_H - Inches(0.4),
                                    SLIDE_W - Inches(0.6), Inches(0.3))
     p = box.text_frame.paragraphs[0]
@@ -62,7 +65,7 @@ def _add_footer(slide) -> None:
     p.font.name = styles.FONT_NAME
 
 
-def _add_title(slide, text: str, size_pt: int = styles.HEADING_SIZE_PT):
+def add_title(slide, text: str, size_pt: int = styles.HEADING_SIZE_PT):
     box = slide.shapes.add_textbox(Inches(0.4), Inches(0.25), SLIDE_W - Inches(0.8),
                                    Inches(0.8))
     p = box.text_frame.paragraphs[0]
@@ -75,9 +78,9 @@ def _add_title(slide, text: str, size_pt: int = styles.HEADING_SIZE_PT):
 
 
 def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None = None,
-               db_path=None) -> BytesIO:
+               db_path=None, data: dict | None = None) -> BytesIO:
     meta = meta or {}
-    d = _gather(snapshot_id, prior_id, meta, db_path=db_path)
+    d = data if data is not None else gather(snapshot_id, prior_id, meta, db_path=db_path)
     rollup, prior_rollup = d["rollup"], d["prior_rollup"]
 
     prs = Presentation()
@@ -87,7 +90,7 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
 
     # Slide 1 — title
     s = prs.slides.add_slide(blank)
-    _add_title(s, f"{meta.get('team', 'Team')} — Business Review",
+    add_title(s, f"{meta.get('team', 'Team')} — Business Review",
                styles.TITLE_SIZE_PT)
     sub = s.shapes.add_textbox(Inches(0.4), Inches(1.4), SLIDE_W - Inches(0.8), Inches(1))
     tf = sub.text_frame
@@ -100,7 +103,7 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
 
     # Slide 2 — scorecard
     s = prs.slides.add_slide(blank)
-    _add_title(s, "Scorecard")
+    add_title(s, "Scorecard")
     cells = [
         ("Commit", fmt_money(rollup["commit"])
          + _arrow(rollup["commit"], prior_rollup["commit"] if prior_rollup else None)),
@@ -123,7 +126,7 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
 
     # Slide 3 — stage movement (native chart, no image screenshots)
     s = prs.slides.add_slide(blank)
-    _add_title(s, "Pipeline by stage")
+    add_title(s, "Pipeline by stage")
     dist = d["stage_dist"]
     open_dist = dist[~dist["bucket"].isin(["closed_won", "closed_lost"])]
     cd = CategoryChartData()
@@ -144,7 +147,7 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
 
     # Slide 4 — top deals (capped rows/cols, fixed font, truncated names)
     s = prs.slides.add_slide(blank)
-    _add_title(s, "Top deals")
+    add_title(s, "Top deals")
     top = d["top"].head(10)
     headers = ["Opportunity", "Account", "Stage", "Amount", "Close"]
     table = s.shapes.add_table(
@@ -167,7 +170,7 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
 
     # Slide 5 — risks & asks
     s = prs.slides.add_slide(blank)
-    _add_title(s, "Risks & asks")
+    add_title(s, "Risks & asks")
     risk_box = s.shapes.add_textbox(Inches(0.4), Inches(1.2), Inches(7.5), Inches(5))
     tf = risk_box.text_frame
     tf.word_wrap = True
@@ -194,7 +197,7 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
     ph.font.color.rgb = RGBColor(*styles.MUTED_RGB)
 
     for slide in prs.slides:
-        _add_footer(slide)
+        add_footer(slide)
 
     buf = BytesIO()
     prs.save(buf)
@@ -203,9 +206,9 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
 
 
 def build_md(snapshot_id: int, prior_id: int | None = None, meta: dict | None = None,
-             db_path=None) -> str:
+             db_path=None, data: dict | None = None) -> str:
     meta = meta or {}
-    d = _gather(snapshot_id, prior_id, meta, db_path=db_path)
+    d = data if data is not None else gather(snapshot_id, prior_id, meta, db_path=db_path)
     rollup, prior_rollup = d["rollup"], d["prior_rollup"]
     lines = [
         f"# {meta.get('team', 'Team')} — Business Review ({meta.get('period', '')})",

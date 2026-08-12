@@ -200,6 +200,17 @@ def upsert_account_facts(df: pd.DataFrame, db_path=None) -> int:
     return len(rows)
 
 
+def delete_account_facts(account_name: str, db_path=None) -> int:
+    """Remove one account's facts row. Used when an alias-confirm re-keys a
+    facts row onto a pipeline's canonical account name, so the old name doesn't
+    leave an orphan row behind."""
+    with _connect(db_path) as con:
+        cur = con.execute(
+            "DELETE FROM account_facts WHERE account_name = ?", (account_name,)
+        )
+        return cur.rowcount
+
+
 def load_account_facts(db_path=None) -> pd.DataFrame:
     with _connect(db_path) as con:
         rows = con.execute(

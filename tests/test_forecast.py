@@ -340,6 +340,20 @@ def test_top_deals_ties_broken_deterministically(db_path):
     assert names == ["acme", "beta", "cephas"]
 
 
+def test_top_deals_accepts_precomputed_flags(db_path):
+    # Reusing a precomputed flags frame must give the same result as computing
+    # it internally (the QBR page passes one in to avoid recomputing risk_flags).
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="B1", amount=600000.0, exec_sponsor=""),
+        opp(opportunity_id="B2", amount=200000.0, exec_sponsor="Jane Exec"),
+    ], "w1", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    internal = forecast.top_deals(cur, db_path=db_path)
+    reused = forecast.top_deals(cur, db_path=db_path, flags=flags)
+    assert internal["flags"].tolist() == reused["flags"].tolist()
+    assert (reused["flags"] == "no_sponsor").any()
+
+
 def test_narrative_offline_socket_guard(db_path, sample_snapshot, monkeypatch):
     import socket
 

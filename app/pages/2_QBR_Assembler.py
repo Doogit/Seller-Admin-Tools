@@ -14,7 +14,7 @@ for p in (str(REPO_ROOT), str(REPO_ROOT / "app")):
 import streamlit as st
 
 import ui
-from core import deck, forecast, store
+from core import deck, store
 
 st.set_page_config(page_title="QBR Assembler", layout="wide")
 st.title("QBR assembler")
@@ -47,19 +47,20 @@ with c5:
 
 meta = {"period": period, "team": team, "quota": quota or None}
 
-rollup = forecast.bucket_rollup(current_id)
-prior_rollup = forecast.bucket_rollup(prior_id) if prior_id else None
-flags = forecast.risk_flags(current_id)
+# One analytics pass drives the on-screen view and both downloads, so
+# risk_flags (which walks every prior snapshot) is computed once, not per view.
+data = deck.gather(current_id, prior_id, meta)
 
-ui.metric_row(rollup, prior_rollup, quota or None, forecast.at_risk_total(flags))
+ui.metric_row(data["rollup"], data["prior_rollup"], quota or None, data["at_risk"])
 st.caption("Numbers identical to Forecast Narrative for the same snapshot.")
 
 st.subheader("Pipeline by stage")
-dist = forecast.stage_distribution(current_id, prior_id)
-open_dist = dist[~dist["bucket"].isin(["closed_won", "closed_lost"])]
+open_dist = data["stage_dist"][
+    ~data["stage_dist"]["bucket"].isin(["closed_won", "closed_lost"])
+]
 st.bar_chart(open_dist.set_index("bucket")["amount"])
 
-sv = forecast.sub_vertical_split(current_id)
+sv = data["sub_vertical"]
 if sv is None:
     st.caption("Sub-vertical split unavailable — field not mapped in this snapshot.")
 else:
@@ -67,16 +68,16 @@ else:
     st.dataframe(sv, width="stretch", hide_index=True)
 
 st.subheader("Top deals")
-st.dataframe(forecast.top_deals(current_id), width="stretch", hide_index=True)
+st.dataframe(data["top"], width="stretch", hide_index=True)
 
 st.subheader("Risks")
-ui.risk_table(flags)
+ui.risk_table(data["flags"])
 
 st.subheader("Downloads")
 stamp = dt.date.today().strftime("%Y%m%d")
 safe_period = (period or "qbr").replace(" ", "_")
-pptx_buf = deck.build_pptx(current_id, prior_id, meta)
-md_text = deck.build_md(current_id, prior_id, meta)
+pptx_buf = deck.build_pptx(current_id, prior_id, meta, data=data)
+md_text = deck.build_md(current_id, prior_id, meta, data=data)
 d1, d2 = st.columns(2)
 with d1:
     st.download_button(

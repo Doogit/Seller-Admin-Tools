@@ -7,6 +7,7 @@ guessed.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -30,22 +31,24 @@ def load_product_map(path=None) -> dict:
     return yaml.safe_load(Path(path or DEFAULT_PRODUCTS).read_text(encoding="utf-8"))
 
 
-def _split(value) -> list[str]:
+def split_list(value) -> list[str]:
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return []
     return [t.strip() for t in str(value).split(";") if t.strip()]
 
 
 def resolve_category(value: str, section: dict[str, list[str]]) -> str | None:
-    """Case-insensitive substring match of a free-text value against alias
-    lists. Returns the capability category or None."""
+    """Case-insensitive whole-word match of a free-text value against alias
+    lists. Returns the capability category or None. Word boundaries prevent a
+    short alias like 'entra' from matching an unrelated value like 'central'
+    (a raw substring match would); an ambiguous value that matches no alias as a
+    whole word is left unresolved rather than guessed."""
     v = value.lower().strip()
     if not v:
         return None
     for category, aliases in (section or {}).items():
         for alias in aliases or []:
-            a = alias.lower()
-            if a in v or v in a:
+            if re.search(rf"\b{re.escape(alias.lower())}\b", v):
                 return category
     return None
 
@@ -72,10 +75,10 @@ def gap_table(
     """
     obligations = (obligation_map or load_obligation_map())["obligations"]
     pmap = product_map or load_product_map()
-    scopes = _split(account_row.get("regulatory_scope"))
-    install = _split(account_row.get("install_base"))
-    incumbents = _split(account_row.get("incumbent_tools"))
-    known_gaps = _split(account_row.get("known_gaps"))
+    scopes = split_list(account_row.get("regulatory_scope"))
+    install = split_list(account_row.get("install_base"))
+    incumbents = split_list(account_row.get("incumbent_tools"))
+    known_gaps = split_list(account_row.get("known_gaps"))
 
     warnings: list[str] = []
     known_ids = {o["obligation_id"] for o in obligations}

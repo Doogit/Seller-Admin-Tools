@@ -143,6 +143,32 @@ def test_uncovered_gaps_listed(facts):
         == set(gaps["capability_category"])
 
 
+def test_resolve_category_matches_whole_words_not_substrings():
+    section = {"identity": ["entra"], "siem": ["sentinel", "microsoft sentinel"]}
+    # whole-word / whole-phrase matches still resolve
+    assert crosswalk.resolve_category("Entra ID", section) == "identity"
+    assert crosswalk.resolve_category("Microsoft Sentinel", section) == "siem"
+    # 'entra' embedded in 'central' must not over-match
+    assert crosswalk.resolve_category("Central Management Console", section) is None
+    assert crosswalk.resolve_category("", section) is None
+
+
+def test_alias_rename_removes_orphan_facts_row(db_path, facts_mapping):
+    # Re-keying a facts row onto a pipeline's canonical name must move it, not
+    # leave the old-name row orphaned in the table.
+    importer.import_account_facts(FACTS_CSV, facts_mapping, db_path=db_path)
+    facts = store.load_account_facts(db_path=db_path)
+    old, new = "cascade power light", "cascade p and l"
+    renamed = facts[facts["account_name"] == old].copy()
+    renamed["account_name"] = new
+    store.upsert_account_facts(renamed, db_path=db_path)
+    store.delete_account_facts(old, db_path=db_path)
+    after = store.load_account_facts(db_path=db_path)
+    assert old not in after["account_name"].tolist()   # no orphan
+    assert new in after["account_name"].tolist()
+    assert len(after) == len(facts)                    # moved, not added
+
+
 def test_append_product_alias_roundtrip(tmp_path):
     p = tmp_path / "product_map.yaml"
     p.write_text("products:\n  siem:\n    - sentinel\nincumbents: {}\n", encoding="utf-8")
