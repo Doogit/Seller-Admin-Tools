@@ -187,6 +187,7 @@ def test_no_sponsor_rule(db_path):
     hits = flags[flags["rule"] == "no_sponsor"]
     assert hits["opportunity_name"].tolist() == ["Deal"] and len(hits) == 1
     assert hits.iloc[0]["amount"] == 600000.0
+    assert "flags at $500K" in hits.iloc[0]["evidence"]
 
 
 def test_no_sponsor_skipped_when_unmapped(db_path):
@@ -213,6 +214,7 @@ def test_big_and_late_rule(db_path):
     assert len(hits) == 1
     assert hits.iloc[0]["amount"] == 1_200_000.0
     assert "2026-08-25" in hits.iloc[0]["evidence"]
+    assert "flags at $1.0M within 30d" in hits.iloc[0]["evidence"]
 
 
 # --- narrative ---
@@ -460,6 +462,36 @@ def test_commit_conversion_counts_and_rate(db_path):
     assert cc["prior_commit_count"] == 2
     assert cc["won"] == 1 and cc["lost"] == 1
     assert cc["landed_rate"] == pytest.approx(0.5)
+
+
+def test_commit_conversion_matches_wow_delta_name_residuals(db_path):
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="OLD", opportunity_name="Stable Deal",
+            stage_bucket="late", forecast_category="commit"),
+    ], "w1", "2026-07-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="NEW", opportunity_name="Stable Deal",
+            stage_bucket="closed_won"),
+    ], "w2", "2026-08-01")
+    cc = forecast.commit_conversion(cur, prior, db_path=db_path)
+    assert cc["won"] == 1
+    assert cc["disappeared"] == 0
+
+
+def test_commit_conversion_does_not_reuse_id_matched_current_row_by_name(db_path):
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="C1", opportunity_name="Original Name",
+            stage_bucket="late", forecast_category="commit"),
+        opp(opportunity_id="C2", opportunity_name="Current Name",
+            stage_bucket="late", forecast_category="commit"),
+    ], "w1", "2026-07-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="C1", opportunity_name="Current Name",
+            stage_bucket="closed_won"),
+    ], "w2", "2026-08-01")
+    cc = forecast.commit_conversion(cur, prior, db_path=db_path)
+    assert cc["won"] == 1
+    assert cc["disappeared"] == 1
 
 
 def test_commit_conversion_none_without_prior(db_path, sample_snapshot):

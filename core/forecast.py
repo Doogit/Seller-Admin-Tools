@@ -326,14 +326,48 @@ def commit_conversion(current_id: int, prior_id: int | None, db_path=None) -> di
     if commit_prior.empty:
         return None
 
-    cur_keys = _keys(cur)
-    cur_dup = set(cur_keys[cur_keys.duplicated(keep=False)])
-    cur_by_key = {k: i for i, k in cur_keys.items() if k not in cur_dup}
-    pri_keys = _keys(pri)
+    cur_ids = cur["opportunity_id"]
+    pri_ids = pri["opportunity_id"]
+    cur_id_dup = set(cur_ids[(cur_ids != "") & cur_ids.duplicated(keep=False)])
+    pri_id_dup = set(pri_ids[(pri_ids != "") & pri_ids.duplicated(keep=False)])
+    cur_by_id = {v: i for i, v in cur_ids.items() if v and v not in cur_id_dup}
+
+    matches: dict[int, int] = {}
+    used_cur: set[int] = set()
+    for i in commit_prior.index:
+        pid = pri_ids[i]
+        if not pid or pid in pri_id_dup:
+            continue
+        j = cur_by_id.get(pid)
+        if j is not None and j not in used_cur:
+            matches[i] = j
+            used_cur.add(j)
+
+    def name_key(df, i):
+        return _name_key(df.at[i, "account_name"], df.at[i, "opportunity_name"])
+
+    residual_pri = [i for i in commit_prior.index if i not in matches]
+    residual_cur = [i for i in cur.index if i not in used_cur]
+    cur_name_keys = pd.Series({i: name_key(cur, i) for i in residual_cur})
+    pri_name_keys = pd.Series({i: name_key(pri, i) for i in residual_pri})
+    cur_name_dup = set(cur_name_keys[cur_name_keys.duplicated(keep=False)])
+    pri_name_dup = set(pri_name_keys[pri_name_keys.duplicated(keep=False)])
+    cur_by_name = {
+        key: i for i, key in cur_name_keys.items()
+        if key not in cur_name_dup
+    }
+    for i in residual_pri:
+        key = pri_name_keys[i]
+        if key in pri_name_dup:
+            continue
+        j = cur_by_name.get(key)
+        if j is not None:
+            matches[i] = j
+            used_cur.add(j)
 
     won = lost = still_open = disappeared = 0
     for i in commit_prior.index:
-        j = cur_by_key.get(pri_keys[i])
+        j = matches.get(i)
         if j is None:
             disappeared += 1
             continue
@@ -518,7 +552,8 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
         big = open_df[(open_df["amount"].fillna(0) >= min_amount) & (open_df["exec_sponsor"] == "")]
         for _, row in big.iterrows():
             add("no_sponsor", row,
-                f"no exec sponsor on a {fmt_money(row['amount'])} deal")
+                f"no exec sponsor on a {fmt_money(row['amount'])} deal "
+                f"(flags at {fmt_money(min_amount)})")
 
     # big_and_late — big deal closing soon (or overdue) but not late-stage
     min_big = float(rules["big_and_late"]["min_amount"])
@@ -533,7 +568,8 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
     for _, row in candidates.iterrows():
         add("big_and_late", row,
             f"{fmt_money(row['amount'])} closing {row['close_date']} "
-            f"but stage is '{row['stage']}' (bucket: {row['stage_bucket'] or 'unmapped'})")
+            f"but stage is '{row['stage']}' (bucket: {row['stage_bucket'] or 'unmapped'}; "
+            f"flags at {fmt_money(min_big)} within {within}d)")
 
     out = pd.DataFrame(flags, columns=FLAG_COLUMNS)
     out.attrs["notes"] = notes
