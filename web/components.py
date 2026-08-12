@@ -11,8 +11,10 @@ from fasthtml.common import (
 
 APP_NAME = "Seller Admin Tools"
 
-# (label, path, blurb). Paths are the eventual per-tool routes (Tasks 2-4).
+# (label, path, blurb). Paths are the per-tool routes.
 TOOLS = (
+    ("Pipeline Import", "/home",
+     "Upload a pipeline CSV, map columns, save a snapshot."),
     ("Forecast Narrative", "/forecast-narrative",
      "Weekly commit / upside / risk narrative draft."),
     ("QBR Assembler", "/qbr",
@@ -108,5 +110,5 @@ def landing():
         P("Local, offline, read-only. Turn a weekly pipeline snapshot into "
           "admin artifacts.", cls="mt-1 text-slate-600"),
         Div(*(tool_card(*t) for t in TOOLS),
-            cls="mt-6 grid gap-4 sm:grid-cols-3"),
+            cls="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"),
     )

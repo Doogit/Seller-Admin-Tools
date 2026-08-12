@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from core import store
+from core import ingest, schema, store
 from core.formatting import fmt_money
 
 # Load-bearing strings shared across tools (ported verbatim).
@@ -18,6 +18,19 @@ PRIOR_NONE_LABEL = "— none —"
 DERIVED_NOTE = "Buckets derived from stage — map forecast_category for accuracy."
 NO_RISK_FLAGS = "No risk flags."
 COVERAGE_EMPTY = "—"
+
+# Reactive import-grid affordances — shared by Home (PIPELINE_SCHEMA) and Account
+# Plan (ACCOUNT_SCHEMA). Pure mirror of app/mapping_ui.render_mapping_grid +
+# render_date_format_choice; the route only renders the returned data.
+NOT_MAPPED = "— not mapped —"
+DATE_FORMAT_LABELS = {
+    "auto": "Auto-detect", "mdy": "US (month/day/year)",
+    "dmy": "International (day/month/year)", "iso": "ISO (yyyy-mm-dd)",
+}
+AMBIGUOUS_DATE_ERROR = (
+    "Every date in this file is ambiguous (e.g. 03/04/2026) — auto-detect cannot "
+    "decide. Choose US or International explicitly.")
+REQUIRED_NOT_MAPPED = "Required fields not mapped: "
 
 
 # --- snapshot selection ------------------------------------------------------
@@ -38,6 +51,61 @@ def default_selection(options: list[tuple[int, str]]) -> tuple[int | None, int |
     if not options:
         return None, None
     return options[0][0], (options[1][0] if len(options) > 1 else None)
+
+
+# --- reactive import grid (pure model of app/mapping_ui.py) ------------------
+
+def _samples(df, col) -> list[str]:
+    return [str(v) for v in df[col].head(8) if str(v).strip()][:3]
+
+
+def import_preview(df, field_mapping: dict[str, str | None],
+                   sch: schema.Schema, date_format: str = "auto") -> dict:
+    """Per-field source-column options + live samples, date-format preview, and
+    missing-required — the data behind the reactive upload grid, for any schema.
+    Pure mirror of mapping_ui.render_mapping_grid + render_date_format_choice."""
+    headers = list(df.columns)
+    options = [NOT_MAPPED] + headers
+    sections = []
+    for title, fields in (("Required fields", sch.required),
+                          ("Optional fields", sch.optional)):
+        rows = []
+        for field, spec in fields.items():
+            col = field_mapping.get(field)
+            rows.append({
+                "field": field,
+                "description": spec["description"],
+                "options": options,
+                "selected": col if col in headers else NOT_MAPPED,
+                "samples": _samples(df, col) if col in headers else [],
+            })
+        sections.append({"title": title, "fields": rows})
+
+    date = _date_preview(df, field_mapping, sch, date_format)
+    missing = [f for f in sch.required if not field_mapping.get(f)]
+    return {"sections": sections, "date": date, "missing_required": missing}
+
+
+def _date_preview(df, field_mapping, sch: schema.Schema, date_format) -> dict | None:
+    date_cols = [field_mapping[f] for f in sch.date_fields if field_mapping.get(f)]
+    if not date_cols:
+        return None
+    out = {"date_format": date_format, "resolved": None, "rows": [], "error": None}
+    sample = df[date_cols[0]].head(20)
+    sample = sample[sample.str.strip() != ""].head(3)
+    try:
+        resolved = date_format
+        if date_format == "auto":
+            resolved = ingest.infer_date_format([df[c] for c in date_cols])
+        parsed, _ = ingest.parse_date_series(sample, resolved)
+        out["resolved"] = resolved
+        out["rows"] = [{"raw": raw, "parsed": p or "unparseable"}
+                       for raw, p in zip(sample, parsed)]
+    except ingest.AmbiguousDateFormat:
+        out["error"] = AMBIGUOUS_DATE_ERROR
+    except ingest.ConflictingDateFormat as e:
+        out["error"] = str(e)
+    return out
 
 
 # --- table cells -------------------------------------------------------------

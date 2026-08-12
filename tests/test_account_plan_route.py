@@ -92,6 +92,32 @@ def test_upload_then_import_seeds_facts(env, client):
     assert not store.load_account_facts().empty  # written to the isolated db
 
 
+def test_ambiguous_date_import_rerenders_grid_without_write(env, client):
+    raw = (
+        b"Account Name,Sub-Vertical,Agreement End\n"
+        b"Acme Power,Power & Utilities,03/04/2026\n"
+    )
+    up = client.post(f"{BASE}/facts/upload",
+                     files={"facts_csv": ("facts.csv", raw, "text/csv")})
+    token = re.search(r'name="token" value="([0-9a-f]+)"', up.text).group(1)
+    suggested = route.vm.suggest_facts_mapping(
+        list(route.ingest.load_csv(raw).columns))
+    data = {"token": token, "date_format": "auto"}
+    for field, col in suggested.items():
+        data[f"map_{field}"] = col or ""
+
+    preview = client.post(f"{BASE}/facts/preview", data=data)
+    assert route.vm.AMBIGUOUS_DATE_ERROR in preview.text
+    assert "Import account facts</button>" in preview.text
+    assert "disabled" in preview.text
+
+    imp = client.post(f"{BASE}/facts/import", data=data)
+    assert imp.status_code == 200
+    assert route.vm.AMBIGUOUS_DATE_ERROR in imp.text
+    assert "Traceback" not in imp.text
+    assert store.load_account_facts().empty
+
+
 def test_plan_fragment_for_selected_account(env, client):
     sid = _seed(env["db"])
     r = client.get(f"{BASE}/plan",

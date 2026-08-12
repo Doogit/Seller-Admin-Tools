@@ -25,7 +25,7 @@ from fasthtml.common import (  # noqa: E402
 )
 
 from web.components import landing  # noqa: E402
-from web.routes import account_plan, forecast_narrative, qbr  # noqa: E402
+from web.routes import account_plan, forecast_narrative, home, qbr  # noqa: E402
 from web.security import LocalOnlyMiddleware  # noqa: E402
 
 STATIC_DIR = REPO_ROOT / "web" / "static"
@@ -64,6 +64,7 @@ def index():
     return landing()
 
 
+home.register(rt)
 forecast_narrative.register(rt)
 qbr.register(rt)
 account_plan.register(rt)
