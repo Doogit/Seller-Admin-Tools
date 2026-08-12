@@ -140,6 +140,10 @@ m1.metric("Whitespace (gap-category pipeline)",
           f"${ws['whitespace_amount']:,.0f}")
 m2.metric("Uncovered gaps (no play yet)", len(ws["uncovered"]))
 m3.metric("Obligations in scope", len(gaps))
+if ws.get("unmeasurable"):
+    st.caption("No `product` field populated on this account's open pipeline — "
+               "whitespace can't be measured (shown as $0, not a true zero). "
+               "Map the product column on Home to enable it.")
 
 if not gaps.empty:
     st.subheader("Obligation → capability → gap")
