@@ -1,0 +1,63 @@
+{
+  "metrics": {
+    "commit": "$0",
+    "upside": "$0",
+    "at_risk": "$0",
+    "coverage": "—",
+    "commit_delta": null,
+    "upside_delta": null,
+    "derived_note": null,
+    "unclassified_note": null
+  },
+  "stage": {
+    "bars": [
+      {
+        "bucket": "early",
+        "amount": 0.0,
+        "amount_str": "$0",
+        "pct": 0
+      },
+      {
+        "bucket": "mid",
+        "amount": 0.0,
+        "amount_str": "$0",
+        "pct": 0
+      },
+      {
+        "bucket": "late",
+        "amount": 0.0,
+        "amount_str": "$0",
+        "pct": 0
+      },
+      {
+        "bucket": "unmapped",
+        "amount": 0.0,
+        "amount_str": "$0",
+        "pct": 0
+      }
+    ],
+    "empty": true
+  },
+  "sub_vertical": null,
+  "top": {
+    "columns": [
+      "opportunity_name",
+      "account_name",
+      "stage",
+      "amount",
+      "close_date",
+      "owner",
+      "flags"
+    ],
+    "rows": []
+  },
+  "risk": {
+    "notes": [
+      "Note: slipped: no prior snapshot — rule skipped.",
+      "Note: no_sponsor: exec_sponsor not mapped — rule skipped."
+    ],
+    "columns": [],
+    "rows": [],
+    "empty_text": "No risk flags."
+  }
+}

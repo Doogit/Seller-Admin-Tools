@@ -1,0 +1,76 @@
+{
+  "slides": [
+    [
+      "Energy — Business Review",
+      "wk32\nGenerated <DATE> from local snapshot data",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Scorecard",
+      "Commit\n$750K ▲ $450K",
+      "Upside\n$900K ▼ $500K",
+      "Coverage\n0.6x",
+      "At risk\n$3.1M",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Pipeline by stage",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Top deals",
+      "Opportunity",
+      "Account",
+      "Stage",
+      "Amount",
+      "Close",
+      "Fresh Delta",
+      "acme power",
+      "01 Qualify",
+      "$1.5M",
+      "2026-08-20",
+      "Renewal Alpha",
+      "acme power",
+      "02 Develop",
+      "$900K",
+      "2026-11-30",
+      "Expansion Beta",
+      "acme power",
+      "03 Propose",
+      "$750K",
+      "2026-10-15",
+      "Mystery Epsilon",
+      "acme power",
+      "Custom Stage",
+      "$750K",
+      "2026-10-01",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Risks & asks",
+      "• Fresh Delta ($1.5M): $1.5M closing 2026-08-20 but stage is '01 Qualify' (bucket: early)\n• Fresh Delta ($1.5M): no exec sponsor on a $1.5M deal\n• Renewal Alpha ($900K): in stage '02 Develop' for 45 days (since 2026-06-27)\n• Expansion Beta ($750K): no exec sponsor on a $750K deal",
+      "Asks\n(fill in — this section stays human)",
+      "DRAFT — generated locally; review before presenting"
+    ]
+  ],
+  "charts": [
+    [
+      "This week ($)",
+      [
+        1500000.0,
+        900000.0,
+        750000.0,
+        750000.0
+      ]
+    ],
+    [
+      "Last week ($)",
+      [
+        50000.0,
+        1400000.0,
+        300000.0,
+        0.0
+      ]
+    ]
+  ]
+}

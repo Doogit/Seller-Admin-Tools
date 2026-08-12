@@ -1,0 +1,137 @@
+{
+  "metrics": {
+    "commit": "$750K",
+    "upside": "$900K",
+    "at_risk": "$3.1M",
+    "coverage": "0.6x",
+    "commit_delta": "$450K",
+    "upside_delta": "-$500K",
+    "derived_note": "Buckets derived from stage — map forecast_category for accuracy.",
+    "unclassified_note": "$750K open in unmapped stages is excluded from coverage."
+  },
+  "stage": {
+    "bars": [
+      {
+        "bucket": "early",
+        "amount": 1500000.0,
+        "amount_str": "$1.5M",
+        "pct": 100
+      },
+      {
+        "bucket": "mid",
+        "amount": 900000.0,
+        "amount_str": "$900K",
+        "pct": 60
+      },
+      {
+        "bucket": "late",
+        "amount": 750000.0,
+        "amount_str": "$750K",
+        "pct": 50
+      },
+      {
+        "bucket": "unmapped",
+        "amount": 750000.0,
+        "amount_str": "$750K",
+        "pct": 50
+      }
+    ],
+    "empty": false
+  },
+  "sub_vertical": null,
+  "top": {
+    "columns": [
+      "opportunity_name",
+      "account_name",
+      "stage",
+      "amount",
+      "close_date",
+      "owner",
+      "flags"
+    ],
+    "rows": [
+      {
+        "opportunity_name": "Fresh Delta",
+        "account_name": "acme power",
+        "stage": "01 Qualify",
+        "amount": "$1.5M",
+        "close_date": "2026-08-20",
+        "owner": "kevin dugas",
+        "flags": "no_sponsor"
+      },
+      {
+        "opportunity_name": "Renewal Alpha",
+        "account_name": "acme power",
+        "stage": "02 Develop",
+        "amount": "$900K",
+        "close_date": "2026-11-30",
+        "owner": "kevin dugas",
+        "flags": "stalled"
+      },
+      {
+        "opportunity_name": "Expansion Beta",
+        "account_name": "acme power",
+        "stage": "03 Propose",
+        "amount": "$750K",
+        "close_date": "2026-10-15",
+        "owner": "priya sharma",
+        "flags": "no_sponsor"
+      },
+      {
+        "opportunity_name": "Mystery Epsilon",
+        "account_name": "acme power",
+        "stage": "Custom Stage",
+        "amount": "$750K",
+        "close_date": "2026-10-01",
+        "owner": "priya sharma",
+        "flags": ""
+      }
+    ]
+  },
+  "risk": {
+    "notes": [],
+    "columns": [
+      "rule",
+      "opportunity_name",
+      "account_name",
+      "owner",
+      "amount",
+      "evidence"
+    ],
+    "rows": [
+      {
+        "rule": "stalled",
+        "opportunity_name": "Renewal Alpha",
+        "account_name": "acme power",
+        "owner": "kevin dugas",
+        "amount": "$900K",
+        "evidence": "in stage '02 Develop' for 45 days (since 2026-06-27)"
+      },
+      {
+        "rule": "no_sponsor",
+        "opportunity_name": "Expansion Beta",
+        "account_name": "acme power",
+        "owner": "priya sharma",
+        "amount": "$750K",
+        "evidence": "no exec sponsor on a $750K deal"
+      },
+      {
+        "rule": "no_sponsor",
+        "opportunity_name": "Fresh Delta",
+        "account_name": "acme power",
+        "owner": "kevin dugas",
+        "amount": "$1.5M",
+        "evidence": "no exec sponsor on a $1.5M deal"
+      },
+      {
+        "rule": "big_and_late",
+        "opportunity_name": "Fresh Delta",
+        "account_name": "acme power",
+        "owner": "kevin dugas",
+        "amount": "$1.5M",
+        "evidence": "$1.5M closing 2026-08-20 but stage is '01 Qualify' (bucket: early)"
+      }
+    ],
+    "empty_text": null
+  }
+}

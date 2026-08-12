@@ -1,0 +1,97 @@
+{
+  "slides": [
+    [
+      "Energy Team — Business Review",
+      "wk32\nGenerated <DATE> from local snapshot data",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Scorecard",
+      "Commit\n$8.8M",
+      "Upside\n$6.3M",
+      "Coverage\n— (no quota)",
+      "At risk\n$750K",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Pipeline by stage",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Top deals",
+      "Opportunity",
+      "Account",
+      "Stage",
+      "Amount",
+      "Close",
+      "Pipeline SCADA Security",
+      "transcanyon pipelines",
+      "04 Commit",
+      "$2.1M",
+      "2026-08-28",
+      "Offshore Platform Monitoring",
+      "gulfstream petroleum",
+      "04 Commit",
+      "$1.8M",
+      "2026-08-21",
+      "Grid Modernization Security",
+      "meridian energy",
+      "04 Commit",
+      "$1.2M",
+      "2026-09-25",
+      "SOC Co-Managed Service",
+      "voltaic grid systems",
+      "04 Commit",
+      "$1.1M",
+      "2026-08-27",
+      "Drilling Ops Endpoint Protection",
+      "ironpeak oil",
+      "04 Commit",
+      "$1.0M",
+      "2026-08-26",
+      "Terminal OT Visibility",
+      "redrock midstream",
+      "04 Commit",
+      "$980K",
+      "2026-09-29",
+      "Control Room Zero Trust",
+      "transcanyon pipelines",
+      "03 Propose",
+      "$880K",
+      "2026-09-23",
+      "SIEM Migration",
+      "ironpeak oil",
+      "03 Propose",
+      "$820K",
+      "2026-09-17",
+      "Identity Consolidation",
+      "gulfstream petroleum",
+      "03 Propose",
+      "$750K",
+      "2026-09-18",
+      "TSA Directive Gap Closure",
+      "transcanyon pipelines",
+      "02 Develop",
+      "$690K",
+      "2026-11-20",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Risks & asks",
+      "• Identity Consolidation ($750K): no exec sponsor on a $750K deal",
+      "Asks\n(fill in — this section stays human)",
+      "DRAFT — generated locally; review before presenting"
+    ]
+  ],
+  "charts": [
+    [
+      "This week ($)",
+      [
+        845000.0,
+        10245000.0,
+        8250000.0,
+        580000.0
+      ]
+    ]
+  ]
+}
