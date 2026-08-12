@@ -1,12 +1,18 @@
 # Risk-rule thresholds. Edit freely — every flag must be defensible, so each
-# rule emits an evidence string the manager can read verbatim.
+# rule emits an evidence string the manager can read verbatim. `action` is the
+# suggested coaching ask surfaced next to the evidence (the one question to put
+# to the rep); edit it to match how your team runs the call.
 stalled:
   min_days_in_stage: 45      # same stage across snapshot history spanning >= N days
+  action: "Ask the rep for the specific next step and a date to advance the stage."
 slipped:
   min_days_slip: 90          # close_date moved out >= 1 quarter vs prior snapshot
+  action: "Confirm what changed and whether the new close date is committed or a guess."
 no_sponsor:
   min_amount: 500000         # exec_sponsor blank on deals >= $; skipped if unmapped
+  action: "Name the exec sponsor and the plan to engage them this week."
 big_and_late:
   min_amount: 1000000        # amount >= $ ...
   within_days: 30            # ... and close_date within N days of the as-of date
   # ... but stage bucket is not "late" (and not closed)
+  action: "Pressure-test the close date against the current stage — is this really landing this month?"

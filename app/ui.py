@@ -42,8 +42,22 @@ def risk_table(flags: pd.DataFrame) -> None:
     if flags.empty:
         st.write("No risk flags.")
     else:
-        st.dataframe(flags.drop(columns=["opportunity_id"], errors="ignore"),
-                     width="stretch", hide_index=True)
+        display = flags.drop(columns=["opportunity_id"], errors="ignore")
+        st.dataframe(
+            display, width="stretch", hide_index=True,
+            column_config={"action": st.column_config.Column("suggested ask")},
+        )
+
+
+def owner_table(rollup: pd.DataFrame) -> None:
+    """Per-seller commit/upside/pipeline/at-risk with money formatted for reading."""
+    if rollup is None or rollup.empty:
+        st.write("No open pipeline by owner.")
+        return
+    disp = rollup.copy()
+    for col in ("commit", "upside", "pipeline", "at_risk"):
+        disp[col] = disp[col].map(fmt_money)
+    st.dataframe(disp, width="stretch", hide_index=True)
 
 
 def deltas_expander(deltas: pd.DataFrame | None) -> None:

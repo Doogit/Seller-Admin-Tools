@@ -74,6 +74,11 @@ if st.button("Regenerate", disabled=not confirm):
         st.session_state.pop(f"ta_{draft_key}_{section}", None)
     st.rerun()
 
+st.subheader("Largest open deals (challenge list)")
+st.caption("Top open deals by amount — the commit/upside deals to pressure-test on the call. "
+           "The flags column shows which already tripped a risk rule.")
+st.dataframe(forecast.top_deals(current_id, flags=flags), width="stretch", hide_index=True)
+
 st.subheader("Risk detail (coaching view)")
 ui.risk_table(flags)
 ui.deltas_expander(deltas)
