@@ -7,10 +7,15 @@ suggest-mapping + import path the Account Plan page uses when a user uploads.
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = REPO_ROOT / "sample_data" / "account_facts_sample.csv"
+
+# Make `core` importable when run as a script (sys.path[0] is deploy/, not the
+# repo root), exactly as sample_data/seed_snapshots.py does.
+sys.path.insert(0, str(REPO_ROOT))
 
 from core import importer, ingest, mapping, schema
 
