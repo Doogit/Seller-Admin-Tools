@@ -54,6 +54,16 @@ data = deck.gather(current_id, prior_id, meta)
 ui.metric_row(data["rollup"], data["prior_rollup"], quota or None, data["at_risk"])
 st.caption("Numbers identical to Forecast Narrative for the same snapshot.")
 
+cred = deck.credibility_summary(data["commit_conversion"])
+if cred:
+    st.caption(cred)
+
+trend = data["trend"]
+if len(trend) >= 2:
+    st.subheader("Trend (through this snapshot)")
+    st.line_chart(trend.set_index("as_of_date")[["commit", "upside", "at_risk"]])
+    st.caption("Commit / upside / at-risk across weekly snapshots up to the selected one.")
+
 st.subheader("Pipeline by stage")
 open_dist = data["stage_dist"][
     ~data["stage_dist"]["bucket"].isin(["closed_won", "closed_lost"])
@@ -66,6 +76,9 @@ if sv is None:
 else:
     st.subheader("Sub-vertical split")
     st.dataframe(sv, width="stretch", hide_index=True)
+
+st.subheader("By seller")
+ui.owner_table(data["owner_rollup"])
 
 st.subheader("Top deals")
 st.dataframe(data["top"], width="stretch", hide_index=True)

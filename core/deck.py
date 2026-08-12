@@ -38,11 +38,29 @@ def gather(snapshot_id: int, prior_id: int | None, meta: dict, db_path=None) -> 
         "prior_rollup": prior_rollup,
         "stage_dist": forecast.stage_distribution(snapshot_id, prior_id, db_path=db_path),
         "top": forecast.top_deals(snapshot_id, db_path=db_path, flags=flags),
+        "owner_rollup": forecast.owner_rollup(snapshot_id, db_path=db_path, flags=flags),
+        "trend": forecast.snapshot_trend(db_path=db_path, through_id=snapshot_id),
+        "commit_conversion": forecast.commit_conversion(snapshot_id, prior_id, db_path=db_path),
         "sub_vertical": forecast.sub_vertical_split(snapshot_id, db_path=db_path),
         "flags": flags,
         "at_risk": at_risk,
         "coverage": (rollup["total_open"] / quota) if quota else None,
     }
+
+
+def credibility_summary(cc: dict | None) -> str | None:
+    """One-line forecast-credibility read from commit_conversion, or None when
+    there is no prior snapshot / no prior commit deals to judge."""
+    if cc is None:
+        return None
+    resolved = cc["won"] + cc["lost"]
+    tail = f"{cc['still_open']} still open, {cc['disappeared']} no longer present"
+    if resolved:
+        rate = cc["won"] / resolved
+        return (f"Commit landed rate: {cc['won']} of {resolved} resolved prior "
+                f"commits won ({rate:.0%}); {tail}.")
+    return (f"Forecast credibility: none of last week's {cc['prior_commit_count']} "
+            f"commit deal(s) have resolved yet ({tail}).")
 
 
 def _arrow(current: float, prior: float | None) -> str:
@@ -179,13 +197,21 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
         tf.text = "No risk flags this period."
     else:
         first = True
-        for _, f in flags.head(8).iterrows():
+        shown = flags.head(8)
+        for _, f in shown.iterrows():
             p = tf.paragraphs[0] if first else tf.add_paragraph()
             first = False
             p.text = f"• {styles.truncate(f['opportunity_name'])} " \
                      f"({fmt_money(f['amount']) if pd.notna(f['amount']) else '—'}): {f['evidence']}"
             p.font.size = Pt(styles.BODY_SIZE_PT)
             p.font.name = styles.FONT_NAME
+        remainder = len(flags) - len(shown)
+        if remainder > 0:
+            p = tf.add_paragraph()
+            p.text = f"…and {remainder} more flagged deal(s) — see the .md appendix."
+            p.font.size = Pt(styles.BODY_SIZE_PT)
+            p.font.name = styles.FONT_NAME
+            p.font.color.rgb = RGBColor(*styles.MUTED_RGB)
     asks = s.shapes.add_textbox(Inches(8.2), Inches(1.2), Inches(4.6), Inches(5))
     tf = asks.text_frame
     tf.text = "Asks"
@@ -220,9 +246,22 @@ def build_md(snapshot_id: int, prior_id: int | None = None, meta: dict | None = 
         + _arrow(rollup["upside"], prior_rollup["upside"] if prior_rollup else None),
         "- Coverage: " + (f"{d['coverage']:.1f}x" if d["coverage"] else "— (no quota)"),
         f"- At risk: {fmt_money(d['at_risk'])}",
-        "",
-        "## Pipeline by stage",
     ]
+    cred = credibility_summary(d.get("commit_conversion"))
+    if cred:
+        lines.append(f"- {cred}")
+    lines.append("")
+    trend = d.get("trend")
+    if trend is not None and len(trend) >= 2:
+        lines += ["## Trend (commit / upside / at-risk by week)",
+                  "| Week | Commit | Upside | At risk |", "|---|---|---|---|"]
+        for _, r in trend.iterrows():
+            lines.append(
+                f"| {r['label']} ({r['as_of_date']}) | {fmt_money(r['commit'])} "
+                f"| {fmt_money(r['upside'])} | {fmt_money(r['at_risk'])} |"
+            )
+        lines.append("")
+    lines += ["## Pipeline by stage"]
     for _, r in d["stage_dist"].iterrows():
         delta = f" (Δ {fmt_money(r['delta_amount'])})" if "delta_amount" in r else ""
         lines.append(f"- {r['bucket']}: {int(r['count'])} deals, {fmt_money(r['amount'])}{delta}")
@@ -233,6 +272,16 @@ def build_md(snapshot_id: int, prior_id: int | None = None, meta: dict | None = 
             f"| {r['opportunity_name']} | {r['account_name']} | {r['stage']} "
             f"| {fmt_money(r['amount']) if pd.notna(r['amount']) else ''} | {r['close_date']} |"
         )
+    owners = d.get("owner_rollup")
+    if owners is not None and not owners.empty:
+        lines += ["", "## By seller",
+                  "| Owner | Commit | Upside | Pipeline | Deals | At risk |",
+                  "|---|---|---|---|---|---|"]
+        for _, r in owners.iterrows():
+            lines.append(
+                f"| {r['owner']} | {fmt_money(r['commit'])} | {fmt_money(r['upside'])} "
+                f"| {fmt_money(r['pipeline'])} | {int(r['deals'])} | {fmt_money(r['at_risk'])} |"
+            )
     if d["sub_vertical"] is not None:
         lines += ["", "## Sub-vertical split"]
         for _, r in d["sub_vertical"].iterrows():

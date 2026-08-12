@@ -1,0 +1,52 @@
+name: package
+
+# Builds the actual container and boots it — catches packaging drift the
+# no-Docker contract tests (tests/test_packaging.py) can't: real dependency
+# resolution, real image build, real startup, and that the baked demo data is
+# present in the running container.
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "core/**"
+      - "config/**"
+      - "sample_data/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "requirements.txt"
+      - "deploy/**"
+      - ".github/workflows/package.yml"
+
+jobs:
+  docker-build-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t seller-admin-tools:ci .
+
+      - name: Boot container
+        run: docker run -d --name sat -p 8000:8000 seller-admin-tools:ci
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/_stcore/health; then echo " healthy"; exit 0; fi
+            sleep 2
+          done
+          echo "container did not become healthy in time"; exit 1
+
+      - name: Assert baked demo data
+        run: >
+          docker exec sat python -c "import sqlite3;
+          c=sqlite3.connect('/app/data/agents.db');
+          s=c.execute('select count(*) from snapshots').fetchone()[0];
+          a=c.execute('select count(*) from account_facts').fetchone()[0];
+          assert s>=2, ('snapshots', s);
+          assert a>=1, ('account_facts', a);
+          print('OK:', s, 'snapshots,', a, 'account facts')"
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs sat || true

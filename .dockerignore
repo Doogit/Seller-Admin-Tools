@@ -1,0 +1,14 @@
+# Keep the build context small. NOTE: sample_data/ and config/ are NOT ignored —
+# the Dockerfile seeds from sample_data/*.csv and the app reads config/*.yaml at
+# runtime. Only the generated store is excluded so the build creates its own.
+.git
+tests
+docs
+data/agents.db
+data/agents.db-wal
+data/agents.db-shm
+**/__pycache__
+*.pyc
+.venv
+venv
+.pytest_cache

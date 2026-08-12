@@ -196,3 +196,16 @@ def test_deck_nan_amount_renders_blank_not_dollar_nan(db_path):
     prs = Presentation(deck.build_pptx(sid, None, {}, db_path=db_path))
     texts = [t for slide in prs.slides for t in _slide_texts(slide)]
     assert not any("nan" in t.lower() for t in texts)
+
+
+def test_build_md_has_by_seller(db_path, sample_snapshot):
+    md = deck.build_md(sample_snapshot, None, {"team": "Energy", "period": "wk32"},
+                       db_path=db_path)
+    assert "## By seller" in md
+
+
+def test_build_md_trend_with_multiple_snapshots(db_path):
+    make_snapshot(db_path, [opp(opportunity_id="A1", amount=100000.0)], "w1", "2026-07-01")
+    w2 = make_snapshot(db_path, [opp(opportunity_id="A1", amount=200000.0)], "w2", "2026-08-01")
+    md = deck.build_md(w2, None, {"team": "E", "period": "wk"}, db_path=db_path)
+    assert "## Trend" in md
