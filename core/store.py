@@ -223,4 +223,8 @@ def get_opportunities(snapshot_id: int, db_path=None) -> pd.DataFrame:
         rows = con.execute(
             "SELECT * FROM opportunities WHERE snapshot_id = ?", (snapshot_id,)
         ).fetchall()
+    if not rows:
+        # A zero-row snapshot must still carry its columns, else every
+        # df["stage_bucket"] access downstream raises KeyError.
+        return pd.DataFrame(columns=["snapshot_id", *OPP_COLUMNS])
     return pd.DataFrame([dict(r) for r in rows])

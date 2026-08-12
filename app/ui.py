@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from core import forecast
 from core.formatting import fmt_money
 
 
@@ -16,12 +17,7 @@ def snapshot_labels(snaps: pd.DataFrame) -> dict[int, str]:
 
 
 def at_risk_total(flags: pd.DataFrame) -> float:
-    if flags is None or flags.empty:
-        return 0.0
-    return float(
-        flags.drop_duplicates(subset=["opportunity_name", "account_name"])["amount"]
-        .fillna(0).sum()
-    )
+    return forecast.at_risk_total(flags)
 
 
 def metric_row(rollup: dict, prior_rollup: dict | None, quota: float | None,

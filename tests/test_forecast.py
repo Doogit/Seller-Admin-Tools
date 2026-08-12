@@ -192,6 +192,26 @@ def test_narrative_contains_rollup_numbers_verbatim(db_path, sample_snapshot):
         assert part in md
 
 
+def test_zero_row_snapshot_no_crash(db_path):
+    """An empty snapshot (header-only import) must not KeyError through the
+    session-3 analytics functions — get_opportunities carries columns even so."""
+    sid = make_snapshot(db_path, [], "empty", "2026-08-11")
+    assert forecast.bucket_rollup(sid, db_path=db_path)["total_open"] == 0.0
+    assert forecast.stage_distribution(sid, db_path=db_path)["count"].sum() == 0
+    assert forecast.top_deals(sid, db_path=db_path).empty
+    assert forecast.owner_rollup(sid, db_path=db_path).empty
+    assert forecast.risk_flags(sid, db_path=db_path).empty
+
+
+def test_at_risk_total_dedups_and_handles_empty(db_path, sample_snapshot):
+    flags = forecast.risk_flags(sample_snapshot, db_path=db_path)
+    manual = (flags.drop_duplicates(subset=["opportunity_name", "account_name"])["amount"]
+              .fillna(0).sum())
+    assert forecast.at_risk_total(flags) == pytest.approx(manual)
+    assert forecast.at_risk_total(flags.iloc[0:0]) == 0.0
+    assert forecast.at_risk_total(None) == 0.0
+
+
 def test_narrative_offline_socket_guard(db_path, sample_snapshot, monkeypatch):
     import socket
 

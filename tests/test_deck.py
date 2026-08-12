@@ -149,3 +149,37 @@ def test_top_deals_joins_flags(db_path, sample_snapshot):
     # the $750K blank-sponsor deal is in the top 10 and carries its flag
     gulf = top[top["opportunity_name"] == "Identity Consolidation"]
     assert not gulf.empty and "no_sponsor" in gulf.iloc[0]["flags"]
+
+
+def test_deck_with_prior_and_quota(db_path):
+    """Exercise the prior-snapshot branches: WoW arrows, the two-series stage
+    chart, and the coverage ratio — all dead in the suite without a prior."""
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="A", stage_bucket="early", amount=100000.0,
+            forecast_category="pipeline"),
+    ], "w1", "2026-08-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="A", stage_bucket="mid", amount=150000.0,
+            forecast_category="upside"),
+    ], "w2", "2026-08-08")
+    meta = {"team": "E", "period": "wk", "quota": 1_000_000.0}
+    md = deck.build_md(cur, prior, meta, db_path=db_path)
+    assert "no quota" not in md          # coverage rendered as a ratio
+    assert "▲" in md                     # upside rose vs last week
+    prs = Presentation(deck.build_pptx(cur, prior, meta, db_path=db_path))
+    chart = next(shape.chart for shape in prs.slides[2].shapes
+                 if getattr(shape, "has_chart", False))
+    assert len(list(chart.plots[0].series)) == 2  # this week + last week
+
+
+def test_deck_nan_amount_renders_blank_not_dollar_nan(db_path):
+    """A blank/NaN amount must render empty, never '$nan' (NaN is truthy)."""
+    sid = make_snapshot(db_path, [
+        opp(opportunity_id="N", opportunity_name="No Amount Deal", amount=None),
+        opp(opportunity_id="H", opportunity_name="Has Amount", amount=200000.0),
+    ], "w1", "2026-08-11")
+    md = deck.build_md(sid, None, {}, db_path=db_path)
+    assert "nan" not in md.lower()
+    prs = Presentation(deck.build_pptx(sid, None, {}, db_path=db_path))
+    texts = [t for slide in prs.slides for t in _slide_texts(slide)]
+    assert not any("nan" in t.lower() for t in texts)

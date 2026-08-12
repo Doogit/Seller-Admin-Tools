@@ -241,7 +241,20 @@ def owner_rollup(snapshot_id: int, db_path=None) -> pd.DataFrame:
             "deals": len(g),
             "at_risk": float(at_risk.get(owner, 0.0)),
         })
-    return pd.DataFrame(rows).sort_values("commit", ascending=False).reset_index(drop=True)
+    return pd.DataFrame(
+        rows, columns=["owner", "commit", "upside", "pipeline", "deals", "at_risk"]
+    ).sort_values("commit", ascending=False).reset_index(drop=True)
+
+
+def at_risk_total(flags: pd.DataFrame) -> float:
+    """Sum of flagged amounts, de-duplicated per opportunity. Single source for
+    both the QBR deck scorecard and the page metric row so they never diverge."""
+    if flags is None or flags.empty:
+        return 0.0
+    return float(
+        flags.drop_duplicates(subset=["opportunity_name", "account_name"])["amount"]
+        .fillna(0).sum()
+    )
 
 
 def sub_vertical_split(snapshot_id: int, db_path=None) -> pd.DataFrame | None:

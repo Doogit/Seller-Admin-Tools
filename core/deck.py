@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 from io import BytesIO
 
+import pandas as pd
 from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
@@ -27,11 +28,7 @@ def _gather(snapshot_id: int, prior_id: int | None, meta: dict, db_path=None) ->
     rollup = forecast.bucket_rollup(snapshot_id, db_path=db_path)
     prior_rollup = forecast.bucket_rollup(prior_id, db_path=db_path) if prior_id else None
     flags = forecast.risk_flags(snapshot_id, db_path=db_path)
-    at_risk = (
-        float(flags.drop_duplicates(subset=["opportunity_name", "account_name"])["amount"]
-              .fillna(0).sum())
-        if not flags.empty else 0.0
-    )
+    at_risk = forecast.at_risk_total(flags)
     quota = meta.get("quota")
     return {
         "rollup": rollup,
@@ -160,7 +157,7 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
         table.cell(i, 0).text = styles.truncate(r["opportunity_name"])
         table.cell(i, 1).text = styles.truncate(r["account_name"], 30)
         table.cell(i, 2).text = r["stage"]
-        table.cell(i, 3).text = fmt_money(r["amount"]) if r["amount"] else ""
+        table.cell(i, 3).text = fmt_money(r["amount"]) if pd.notna(r["amount"]) else ""
         table.cell(i, 4).text = r["close_date"]
     for row in table.rows:
         for cell in row.cells:
@@ -183,7 +180,7 @@ def build_pptx(snapshot_id: int, prior_id: int | None = None, meta: dict | None 
             p = tf.paragraphs[0] if first else tf.add_paragraph()
             first = False
             p.text = f"• {styles.truncate(f['opportunity_name'])} " \
-                     f"({fmt_money(f['amount']) if f['amount'] else '—'}): {f['evidence']}"
+                     f"({fmt_money(f['amount']) if pd.notna(f['amount']) else '—'}): {f['evidence']}"
             p.font.size = Pt(styles.BODY_SIZE_PT)
             p.font.name = styles.FONT_NAME
     asks = s.shapes.add_textbox(Inches(8.2), Inches(1.2), Inches(4.6), Inches(5))
@@ -231,7 +228,7 @@ def build_md(snapshot_id: int, prior_id: int | None = None, meta: dict | None = 
     for _, r in d["top"].head(10).iterrows():
         lines.append(
             f"| {r['opportunity_name']} | {r['account_name']} | {r['stage']} "
-            f"| {fmt_money(r['amount']) if r['amount'] else ''} | {r['close_date']} |"
+            f"| {fmt_money(r['amount']) if pd.notna(r['amount']) else ''} | {r['close_date']} |"
         )
     if d["sub_vertical"] is not None:
         lines += ["", "## Sub-vertical split"]
@@ -244,7 +241,7 @@ def build_md(snapshot_id: int, prior_id: int | None = None, meta: dict | None = 
     else:
         for _, f in flags.iterrows():
             lines.append(f"- {f['opportunity_name']} "
-                         f"({fmt_money(f['amount']) if f['amount'] else '—'}): {f['evidence']}")
+                         f"({fmt_money(f['amount']) if pd.notna(f['amount']) else '—'}): {f['evidence']}")
     lines += ["- Asks: (fill in — this section stays human)", "",
               f"*{styles.DRAFT_FOOTER}*", ""]
     return "\n".join(lines)

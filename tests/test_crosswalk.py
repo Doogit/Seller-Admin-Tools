@@ -41,6 +41,31 @@ def test_account_facts_replace_semantics(db_path, facts_mapping):
     assert len(facts) == 5  # re-import replaces, never duplicates
 
 
+def test_account_facts_replace_overwrites_value(db_path, facts_mapping):
+    """Row count alone can't tell REPLACE from IGNORE — assert the stored value
+    actually changes on re-upsert of an existing account."""
+    importer.import_account_facts(FACTS_CSV, facts_mapping, db_path=db_path)
+    before = store.load_account_facts(db_path=db_path)
+    target = before.iloc[0].to_dict()
+    store.upsert_account_facts(
+        pd.DataFrame([{**target, "annual_spend": 424242.0}]), db_path=db_path
+    )
+    after = store.load_account_facts(db_path=db_path)
+    assert len(after) == len(before)  # replaced in place, not appended
+    row = after[after["account_name"] == target["account_name"]].iloc[0]
+    assert row["annual_spend"] == 424242.0
+
+
+def test_import_account_facts_blocks_on_missing_required(db_path, facts_mapping):
+    """A mapping missing a required ACCOUNT_SCHEMA field must block and write
+    nothing, not partially import."""
+    broken = {**facts_mapping, "sub_vertical": None}
+    result = importer.import_account_facts(FACTS_CSV, broken, db_path=db_path)
+    assert result.blocking
+    assert result.n_accounts == 0
+    assert store.load_account_facts(db_path=db_path).empty
+
+
 def test_landed_partial_gap_classification(facts):
     meridian = row(facts, "meridian energy")
     gaps = crosswalk.gap_table(meridian)
