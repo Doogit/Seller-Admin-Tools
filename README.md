@@ -11,13 +11,26 @@ external system.
 
 - **Vendor-neutral core.** No CRM-specific column names are hard-coded anywhere.
   A mapping screen translates *any* CSV export to a canonical schema, so a new
-  export format is a 30-second remap, not a code change.
-- **Deterministic.** Given the same snapshot, every tool produces byte-identical
-  output. The QBR deck and the forecast narrative read the same analytics
-  functions, so their numbers can never disagree.
+  export format is a remap, not a code change.
+- **Deterministic analytics.** Given the same snapshot, every tool computes the
+  same numbers on every run. The QBR deck and the forecast narrative read the
+  same `core/forecast` functions, so their figures can never disagree — a
+  consistency test rebuilds the deck and parses the commit figure back out to
+  prove it. (The exported `.pptx`/`.md` files are drafts stamped with the build
+  date, not reproducible binaries — it's the underlying numbers that are fixed.)
 - **Config-not-code.** Stage maps, name aliases, risk rules, narrative templates,
   and the compliance crosswalk all live in editable YAML under `config/`, read
   at call time.
+
+---
+
+## Demo
+
+The four tools end to end, scrolling through each page. This GIF is generated
+from the stills in `docs/screenshots/` by `scripts/build_demo_reel.py`, so it
+stays in sync with them (CI rebuilds it whenever the screenshots change).
+
+![Demo reel scrolling through the four tools](docs/demo-reel.gif)
 
 ---
 
@@ -211,7 +224,8 @@ core/         pure logic, no UI:
                 crosswalk, plan                            (tool 3)
 app/          Streamlit entry (Home.py) + pages/ + shared render helpers
 sample_data/  fictional sample CSVs + seed script
-tests/        pytest suite (74 tests)
+scripts/      build-only tooling (demo-reel GIF), not a runtime dependency
+tests/        pytest suite (88 tests)
 data/         SQLite database (created at runtime, git-ignored)
 ```
 
@@ -239,7 +253,7 @@ pages are thin wrappers that call them.
 python -m pytest
 ```
 
-74 tests cover the ingest/mapping pipeline, forecast analytics (including
+88 tests cover the ingest/mapping pipeline, forecast analytics (including
 week-over-week matching and risk-flag boundaries), deck consistency, the
 compliance crosswalk, and empty/edge-case inputs. Tests use throwaway temp
 databases and never touch `data/agents.db`.
