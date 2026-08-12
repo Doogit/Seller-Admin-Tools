@@ -55,6 +55,14 @@ def test_dockerfile_and_deploy_agree_on_port():
     )
 
 
+def test_deploy_enables_acr_arm_auth_for_managed_identity_pull():
+    deploy = (REPO / "deploy" / "azure-deploy.ps1").read_text(encoding="utf-8")
+    assert re.search(
+        r"az\s+acr\s+config\s+authentication-as-arm\s+update\b[^\r\n]*--status\s+enabled\b",
+        deploy,
+    ), "App Service managed-identity ACR pulls require ARM audience token auth"
+
+
 def test_packaging_modules_importable():
     for mod in ("core.importer", "core.store", "core.mapping", "core.schema"):
         importlib.import_module(mod)

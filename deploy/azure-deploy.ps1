@@ -40,6 +40,12 @@ az group create -n $ResourceGroup -l $Location -o none
 
 # 2. Container registry + remote build (no local Docker needed)
 az acr create -g $ResourceGroup -n $AcrName --sku Basic -o none
+
+# App Service managed-identity pulls from ACR require the registry to accept ARM
+# audience tokens. New registries normally allow this, but explicit enablement
+# keeps the script working in subscriptions with stricter registry policy.
+az acr config authentication-as-arm update -r $AcrName --status enabled -o none
+
 Write-Host "Building image in Azure (az acr build)..."
 az acr build -r $AcrName -t $Image "$RepoRoot" -o none
 
