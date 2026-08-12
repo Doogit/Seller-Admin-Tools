@@ -1,1 +1,6 @@
-sample_data/*.csv -text
+# Generated & vendored web assets: preserve exact bytes, never convert EOLs.
+# Keeps `make css` output byte-identical to the committed file on every platform
+# (Tailwind CLI writes LF) and preserves vendored JS integrity for the offline
+# check. Without this, autocrlf=true rewrites them to CRLF on checkout.
+web/static/*.css -text
+web/static/*.js  -text
