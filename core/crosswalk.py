@@ -140,14 +140,18 @@ def whitespace_estimate(
     matched_categories: set[str] = set()
     unresolved: list[str] = []
     matched_rows: list[dict] = []
+    open_rows = 0
+    rows_with_product = 0
     if pipeline_df is not None and not pipeline_df.empty:
         open_df = pipeline_df[
             ~pipeline_df["stage_bucket"].fillna("").isin(["closed_won", "closed_lost"])
         ]
+        open_rows = len(open_df)
         for _, r in open_df.iterrows():
             product = (r.get("product") or "").strip()
             if not product:
                 continue
+            rows_with_product += 1
             category = resolve_category(product, pmap.get("products"))
             if category is None:
                 unresolved.append(product)
@@ -176,4 +180,7 @@ def whitespace_estimate(
         "matched": pd.DataFrame(matched_rows),
         "uncovered": uncovered,
         "unresolved_products": sorted(set(unresolved)),
+        # True when there is open pipeline but not a single row carries a product,
+        # so a $0 whitespace means "can't measure", not "no opportunity".
+        "unmeasurable": open_rows > 0 and rows_with_product == 0,
     }

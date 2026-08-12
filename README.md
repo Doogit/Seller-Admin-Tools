@@ -11,13 +11,26 @@ external system.
 
 - **Vendor-neutral core.** No CRM-specific column names are hard-coded anywhere.
   A mapping screen translates *any* CSV export to a canonical schema, so a new
-  export format is a 30-second remap, not a code change.
-- **Deterministic.** Given the same snapshot, every tool produces byte-identical
-  output. The QBR deck and the forecast narrative read the same analytics
-  functions, so their numbers can never disagree.
+  export format is a remap, not a code change.
+- **Deterministic analytics.** Given the same snapshot, every tool computes the
+  same numbers on every run. The QBR deck and the forecast narrative read the
+  same `core/forecast` functions, so their figures can never disagree — a
+  consistency test rebuilds the deck and parses the commit figure back out to
+  prove it. (The exported `.pptx`/`.md` files are drafts stamped with the build
+  date, not reproducible binaries — it's the underlying numbers that are fixed.)
 - **Config-not-code.** Stage maps, name aliases, risk rules, narrative templates,
   and the compliance crosswalk all live in editable YAML under `config/`, read
   at call time.
+
+---
+
+## Demo
+
+The four tools end to end, scrolling through each page. This GIF is generated
+from the stills in `docs/screenshots/` by `scripts/build_demo_reel.py`, so it
+stays in sync with them (CI rebuilds it whenever the screenshots change).
+
+![Demo reel scrolling through the four tools](docs/demo-reel.gif)
 
 ---
 
@@ -49,11 +62,33 @@ The foundation every tool builds on. Upload any pipeline CSV; the app:
    re-import, and stores the rows as an append-only snapshot (keyed by file hash,
    so re-importing the same file is caught).
 
-The canonical schema has six required fields (`account_name`,
-`opportunity_name`, `stage`, `amount`, `close_date`, `owner`) and optional fields
-that unlock richer analysis when present (`opportunity_id` — the join key for
-week-over-week deltas — plus `forecast_category`, `probability`, `product`,
-`sub_vertical`, `exec_sponsor`, and date fields).
+#### Pipeline column contract
+
+Map your export's columns to these canonical fields. The six required fields are
+the minimum to import; each optional field unlocks a specific capability, so you
+only map what you have.
+
+| Canonical field | Req? | Type | Unlocks / notes |
+|---|---|---|---|
+| `account_name` | ✅ | text | Rollups, account-plan join (normalized; raw kept) |
+| `opportunity_name` | ✅ | text | Deal identity in every artifact |
+| `stage` | ✅ | text | Stage buckets → commit/upside/pipeline, stalled/late flags |
+| `amount` | ✅ | money | Every dollar total (parenthesized negatives supported) |
+| `close_date` | ✅ | date | Slip detection, `big_and_late` flag |
+| `owner` | ✅ | text | Per-seller rollup (alias-normalized) |
+| `opportunity_id` | — | text | **Join key for week-over-week deltas** — without it, rows match on normalized name (strongly recommended) |
+| `forecast_category` | — | text | `commit`/`upside`/`pipeline` directly (else derived from stage) |
+| `probability` | — | number | Win probability 0–100 |
+| `product` | — | text | Account-plan whitespace crosswalk |
+| `sub_vertical` | — | text | Sub-vertical split on the QBR |
+| `exec_sponsor` | — | text | `no_sponsor` risk flag (skipped if unmapped) |
+| `last_activity_date`, `created_date` | — | date | Reserved for future age/activity rules |
+
+Types: **money** accepts `$`, thousands separators, and parenthesized negatives;
+**date** is resolved once for the file (auto, US, International, or ISO) with a
+live preview. Unmapped required fields **block** the import; data-quality issues
+(bad dates, negative amounts, blank/duplicate IDs) are **warnings** — rows still
+import, with the problem surfaced.
 
 ### 1. Forecast Narrative
 
@@ -71,7 +106,9 @@ Drafts the weekly commit / upside / risk story from a snapshot:
   `stalled` (stage age past a threshold, measured per opportunity across
   snapshots), `slipped` (close date pushed out), `no_sponsor` (large deal with no
   exec sponsor), and `big_and_late` (large deal closing soon but not late-stage).
-  Each flag carries a plain-English evidence string.
+  Each flag carries a plain-English evidence string (with the firing threshold
+  shown, so it is checkable) plus a configurable **suggested coaching ask** — the
+  one question to put to the rep — editable in `config/risk_rules.yaml`.
 
 The numbers are inserted verbatim; the editable prose stays under your control.
 Export by copy or `.md` download.
@@ -81,7 +118,10 @@ Export by copy or `.md` download.
 ![QBR Assembler — scorecard and native pipeline-by-stage chart](docs/screenshots/2-qbr-assembler.png)
 
 One click from a snapshot to a five-slide `.pptx` (title, scorecard, pipeline-by-
-stage native bar chart, top deals, risks & asks) plus a `.md` appendix. Tables
+stage native bar chart, top deals, risks & asks) plus a `.md` appendix. The
+on-screen view and appendix also carry a **per-seller roll-up** (commit / upside
+/ pipeline / at-risk, alias-normalized) and a **multi-week trend** of commit /
+upside / at-risk across snapshots up to the selected week. Tables
 are row/column-capped and long names truncated so slides never overflow; every
 slide carries a `DRAFT` footer. A consistency-guard test parses the commit figure
 back out of the built deck and asserts it equals the narrative's — the two views
@@ -188,6 +228,23 @@ upload `sample_data/energy_pipeline_sample.csv` yourself) → **Forecast Narrati
 > The screenshots above show the tools running against the bundled sample data,
 > and the `<details>` blocks show real, reproducible export output.
 
+## Run it hosted (Azure App Service)
+
+To put the tools on a URL instead of a laptop, `deploy/azure-deploy.ps1` builds a
+container image *inside Azure* (no local Docker) and provisions App Service for
+Containers with the committed sample data baked in — all three tools populated:
+
+```powershell
+az login
+./deploy/azure-deploy.ps1
+```
+
+It serves synthetic data with no auth by default; see
+[deploy/README.md](deploy/README.md) for the one-command Entra (Microsoft
+sign-in) gate to add before using real data. The `Dockerfile` also runs anywhere
+Docker does (`docker build -t seller-admin-tools . && docker run -p 8000:8000
+seller-admin-tools`).
+
 ## Sample data
 
 - `sample_data/energy_pipeline_sample.csv` — 40 **fictional** rows (invented
@@ -213,6 +270,30 @@ All under `config/`, editable YAML read at call time — no code change needed:
 | `obligation_map.yaml` | Regulatory obligation → required capability |
 | `product_map.yaml` | Product/competitor names → capability category |
 
+## For evaluators (cost, auditability, extensibility)
+
+If you are weighing this against a commercial suite:
+
+- **Cost of operation.** Zero infrastructure. It runs on one machine, fully
+  offline — no accounts, API keys, per-seat licensing, or network egress. The
+  only cost is a Python environment.
+- **Auditability.** Every analytic number is deterministic for a given snapshot;
+  the exported `.pptx`/`.md` files are date-stamped drafts, not reproducible
+  binaries. A test parses the commit figure back out of the built deck and
+  asserts it equals the narrative's. Every risk flag carries a plain-English
+  evidence string *including the firing threshold*, and all numbers are inserted
+  verbatim — there is no model deciding them. Snapshots are append-only and
+  keyed by file hash, so re-importing the same file is caught.
+- **Extensibility.** All behavior lives in editable YAML read at call time —
+  stage map, name aliases, risk thresholds + coaching asks, narrative wording,
+  and the compliance crosswalk. A new CRM format is a column remap saved as a
+  reusable profile, not a code change; the mapping/ingest pipeline is
+  schema-parameterized (pipeline snapshots and account facts share it).
+- **Deliberately absent** (vs. a commercial suite): CRM write-back, multi-user
+  auth, scheduled/automatic refresh, region-level roll-ups, multi-currency, and
+  AI-generated prose. These are out of scope by design — the point is an offline,
+  deterministic, auditable toolkit, not a platform.
+
 ## Architecture
 
 ```
@@ -228,7 +309,8 @@ web/          FastHTML app for the three tools:
                 built Tailwind)
 app/          Streamlit entry: Home.py (ingest & mapping) + mapping_ui helpers
 sample_data/  fictional sample CSVs + seed script
-tests/        pytest suite (143 tests)
+scripts/      build-only tooling (demo-reel GIF), not a runtime dependency
+tests/        pytest suite (TESTCOUNT tests)
 data/         SQLite database (created at runtime, git-ignored)
 ```
 
@@ -260,15 +342,15 @@ shared core.
 python -m pytest
 ```
 
-143 tests cover the ingest/mapping pipeline, forecast analytics (including
-week-over-week matching and risk-flag boundaries), deck consistency, the
-compliance crosswalk, the per-tool view models, and the FastHTML routes
-(including golden parity gates that hold the `.md`/`.pptx` exports byte- and
-content-stable). Tests use throwaway temp databases and never touch
-`data/agents.db`.
+TESTCOUNT tests cover the ingest/mapping pipeline, forecast analytics (including
+week-over-week matching, risk-flag boundaries, the multi-week trend, and
+commit-conversion credibility), deck consistency, the compliance crosswalk, the
+per-tool view models, and the FastHTML routes (golden parity gates hold the
+`.md`/`.pptx` exports byte- and content-stable). Tests use throwaway temp
+databases and never touch `data/agents.db`.
 
 ## Not included (by design)
 
-LLM/AI polish of the draft text, a manager roll-up view, a branded deck template,
-multi-user auth, and multi-currency handling are intentionally out of scope for
-this version.
+LLM/AI polish of the draft text, a branded deck template, multi-user auth,
+region-level (vs. seller-level) roll-ups, and multi-currency handling are
+intentionally out of scope for this version.

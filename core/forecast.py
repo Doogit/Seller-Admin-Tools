@@ -25,7 +25,7 @@ STAGE_TO_CATEGORY = {"late": "commit", "mid": "upside", "early": "pipeline"}
 
 DELTA_COLUMNS = ["change_type", "opportunity_name", "account_name", "owner", "amount", "detail"]
 FLAG_COLUMNS = ["rule", "opportunity_name", "account_name", "owner", "amount", "evidence",
-                "opportunity_id"]
+                "action", "opportunity_id"]
 
 
 def _load_rules(rules_path=None) -> dict:
@@ -280,13 +280,15 @@ def top_deals(snapshot_id: int, n: int = 10, db_path=None, flags=None) -> pd.Dat
     return out.reset_index(drop=True)
 
 
-def owner_rollup(snapshot_id: int, db_path=None) -> pd.DataFrame:
+def owner_rollup(snapshot_id: int, db_path=None, flags=None) -> pd.DataFrame:
     """Per-seller commit / upside / pipeline / at-risk. Groups on the
     alias-normalized owner column written at import time, so spelling variants
-    of one seller roll up as one row."""
+    of one seller roll up as one row. Pass a precomputed `flags` frame to avoid
+    recomputing risk_flags (it walks every prior snapshot)."""
     df = _clean(store.get_opportunities(snapshot_id, db_path=db_path))
     open_df, _ = _open_with_category(df)
-    flags = risk_flags(snapshot_id, db_path=db_path)
+    if flags is None:
+        flags = risk_flags(snapshot_id, db_path=db_path)
     flagged = dedup_flags(flags)
     at_risk = flagged.groupby("owner")["amount"].sum() if not flagged.empty else pd.Series(dtype="float64")
 
@@ -304,6 +306,116 @@ def owner_rollup(snapshot_id: int, db_path=None) -> pd.DataFrame:
     return pd.DataFrame(
         rows, columns=["owner", "commit", "upside", "pipeline", "deals", "at_risk"]
     ).sort_values("commit", ascending=False).reset_index(drop=True)
+
+
+def commit_conversion(current_id: int, prior_id: int | None, db_path=None) -> dict | None:
+    """Forecast credibility: of the deals in forecast-commit in the prior
+    snapshot, how many have since landed (closed_won) vs slipped away
+    (closed_lost) vs are still open. `landed_rate` is won / (won + lost) — the
+    hit rate once a commit resolves — None until at least one has resolved.
+    Deals are matched by the same identity rule as wow_delta. Returns None when
+    there is no prior snapshot or the prior held no commit deals."""
+    if prior_id is None:
+        return None
+    cur = _clean(store.get_opportunities(current_id, db_path=db_path))
+    pri = _clean(store.get_opportunities(prior_id, db_path=db_path))
+    if cur.empty or pri.empty:
+        return None
+    prior_open, _ = _open_with_category(pri)
+    commit_prior = prior_open[prior_open["category"] == "commit"]
+    if commit_prior.empty:
+        return None
+
+    cur_ids = cur["opportunity_id"]
+    pri_ids = pri["opportunity_id"]
+    cur_id_dup = set(cur_ids[(cur_ids != "") & cur_ids.duplicated(keep=False)])
+    pri_id_dup = set(pri_ids[(pri_ids != "") & pri_ids.duplicated(keep=False)])
+    cur_by_id = {v: i for i, v in cur_ids.items() if v and v not in cur_id_dup}
+
+    matches: dict[int, int] = {}
+    used_cur: set[int] = set()
+    for i in commit_prior.index:
+        pid = pri_ids[i]
+        if not pid or pid in pri_id_dup:
+            continue
+        j = cur_by_id.get(pid)
+        if j is not None and j not in used_cur:
+            matches[i] = j
+            used_cur.add(j)
+
+    def name_key(df, i):
+        return _name_key(df.at[i, "account_name"], df.at[i, "opportunity_name"])
+
+    residual_pri = [i for i in commit_prior.index if i not in matches]
+    residual_cur = [i for i in cur.index if i not in used_cur]
+    cur_name_keys = pd.Series({i: name_key(cur, i) for i in residual_cur})
+    pri_name_keys = pd.Series({i: name_key(pri, i) for i in residual_pri})
+    cur_name_dup = set(cur_name_keys[cur_name_keys.duplicated(keep=False)])
+    pri_name_dup = set(pri_name_keys[pri_name_keys.duplicated(keep=False)])
+    cur_by_name = {
+        key: i for i, key in cur_name_keys.items()
+        if key not in cur_name_dup
+    }
+    for i in residual_pri:
+        key = pri_name_keys[i]
+        if key in pri_name_dup:
+            continue
+        j = cur_by_name.get(key)
+        if j is not None:
+            matches[i] = j
+            used_cur.add(j)
+
+    won = lost = still_open = disappeared = 0
+    for i in commit_prior.index:
+        j = matches.get(i)
+        if j is None:
+            disappeared += 1
+            continue
+        bucket = cur.at[j, "stage_bucket"]
+        if bucket == "closed_won":
+            won += 1
+        elif bucket == "closed_lost":
+            lost += 1
+        else:
+            still_open += 1
+    resolved = won + lost
+    return {
+        "prior_commit_count": int(len(commit_prior)),
+        "won": won,
+        "lost": lost,
+        "still_open": still_open,
+        "disappeared": disappeared,
+        "landed_rate": (won / resolved) if resolved else None,
+    }
+
+
+TREND_COLUMNS = ["as_of_date", "label", "commit", "upside", "at_risk"]
+
+
+def snapshot_trend(db_path=None, through_id: int | None = None) -> pd.DataFrame:
+    """Commit / upside / at-risk per snapshot in as-of order — the multi-week
+    trend a VP reads to judge whether the desk is improving. One row per
+    snapshot; when `through_id` is given, only snapshots on or before that
+    snapshot's as-of date are included (a QBR must not show future weeks)."""
+    snaps = store.list_snapshots(db_path=db_path)
+    if snaps.empty:
+        return pd.DataFrame(columns=TREND_COLUMNS)
+    snaps = snaps.sort_values(["as_of_date", "id"])
+    if through_id is not None:
+        cutoff = _snapshot_as_of(through_id, db_path=db_path).isoformat()
+        snaps = snaps[snaps["as_of_date"] <= cutoff]
+    rows = []
+    for _, s in snaps.iterrows():
+        sid = int(s["id"])
+        r = bucket_rollup(sid, db_path=db_path)
+        rows.append({
+            "as_of_date": s["as_of_date"],
+            "label": s["label"],
+            "commit": r["commit"],
+            "upside": r["upside"],
+            "at_risk": at_risk_total(risk_flags(sid, db_path=db_path)),
+        })
+    return pd.DataFrame(rows, columns=TREND_COLUMNS)
 
 
 def at_risk_total(flags: pd.DataFrame) -> float:
@@ -369,6 +481,7 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
             "owner": row["owner"],
             "amount": row["amount"],
             "evidence": evidence,
+            "action": (rules.get(rule) or {}).get("action", ""),
         })
 
     # stalled — walk snapshots backward per opportunity (consecutive run)
@@ -398,7 +511,8 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
         observed = (cur_as_of - observed_since).days
         if age >= threshold:
             add("stalled", row,
-                f"in stage '{row['stage']}' for {age} days (since {same_stage_since})")
+                f"in stage '{row['stage']}' for {age} days "
+                f"(since {same_stage_since}; flags at {threshold})")
         elif seen and not moved and observed < threshold:
             # Seen before but not long enough to judge. Brand-new deals (never
             # in any prior) are simply new, not "insufficient history".
@@ -425,7 +539,8 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
             if c_close and p_close:
                 delta = (dt.date.fromisoformat(c_close) - dt.date.fromisoformat(p_close)).days
                 if delta >= slip_days:
-                    add("slipped", row, f"close date moved {p_close} → {c_close} (+{delta}d)")
+                    add("slipped", row,
+                        f"close date moved {p_close} → {c_close} (+{delta}d, flags at {slip_days}d)")
     else:
         notes.append("slipped: no prior snapshot — rule skipped.")
 
@@ -437,7 +552,8 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
         big = open_df[(open_df["amount"].fillna(0) >= min_amount) & (open_df["exec_sponsor"] == "")]
         for _, row in big.iterrows():
             add("no_sponsor", row,
-                f"no exec sponsor on a {fmt_money(row['amount'])} deal")
+                f"no exec sponsor on a {fmt_money(row['amount'])} deal "
+                f"(flags at {fmt_money(min_amount)})")
 
     # big_and_late — big deal closing soon (or overdue) but not late-stage
     min_big = float(rules["big_and_late"]["min_amount"])
@@ -452,7 +568,8 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
     for _, row in candidates.iterrows():
         add("big_and_late", row,
             f"{fmt_money(row['amount'])} closing {row['close_date']} "
-            f"but stage is '{row['stage']}' (bucket: {row['stage_bucket'] or 'unmapped'})")
+            f"but stage is '{row['stage']}' (bucket: {row['stage_bucket'] or 'unmapped'}; "
+            f"flags at {fmt_money(min_big)} within {within}d)")
 
     out = pd.DataFrame(flags, columns=FLAG_COLUMNS)
     out.attrs["notes"] = notes

@@ -187,6 +187,7 @@ def test_no_sponsor_rule(db_path):
     hits = flags[flags["rule"] == "no_sponsor"]
     assert hits["opportunity_name"].tolist() == ["Deal"] and len(hits) == 1
     assert hits.iloc[0]["amount"] == 600000.0
+    assert "flags at $500K" in hits.iloc[0]["evidence"]
 
 
 def test_no_sponsor_skipped_when_unmapped(db_path):
@@ -213,6 +214,7 @@ def test_big_and_late_rule(db_path):
     assert len(hits) == 1
     assert hits.iloc[0]["amount"] == 1_200_000.0
     assert "2026-08-25" in hits.iloc[0]["evidence"]
+    assert "flags at $1.0M within 30d" in hits.iloc[0]["evidence"]
 
 
 # --- narrative ---
@@ -397,3 +399,100 @@ def test_narrative_offline_socket_guard(db_path, sample_snapshot, monkeypatch):
     flags = forecast.risk_flags(sample_snapshot, db_path=db_path)
     sections = narrative.draft(rollup, None, flags)
     assert sections["commit"] and sections["upside"] and sections["risk"]
+
+
+def test_risk_flags_carry_coaching_action(db_path):
+    # Every flag row carries the configured coaching ask so the manager sees the
+    # one question to put to the rep, not just the evidence.
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="A1", opportunity_name="Renewal", amount=600000.0,
+            exec_sponsor="", owner="kevin dugas"),
+    ], "w1", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    assert "action" in forecast.FLAG_COLUMNS
+    ns = flags[flags["rule"] == "no_sponsor"].iloc[0]
+    assert ns["action"].strip()  # non-empty, sourced from risk_rules.yaml
+
+
+def test_owner_rollup_accepts_precomputed_flags(db_path, sample_snapshot):
+    # Passing flags in must match computing them internally (deck.gather threads
+    # the single risk_flags pass through owner_rollup to avoid recompute).
+    flags = forecast.risk_flags(sample_snapshot, db_path=db_path)
+    passed = forecast.owner_rollup(sample_snapshot, db_path=db_path, flags=flags)
+    internal = forecast.owner_rollup(sample_snapshot, db_path=db_path)
+    pd.testing.assert_frame_equal(passed, internal)
+
+
+def test_snapshot_trend_orders_and_filters(db_path):
+    w1 = make_snapshot(db_path, [opp(opportunity_id="A1", amount=100000.0)],
+                       "w1", "2026-07-01")
+    make_snapshot(db_path, [opp(opportunity_id="A1", amount=200000.0)],
+                  "w2", "2026-08-01")
+    tr = forecast.snapshot_trend(db_path=db_path)
+    assert list(tr.columns) == forecast.TREND_COLUMNS
+    assert tr["as_of_date"].tolist() == ["2026-07-01", "2026-08-01"]
+    # through_id caps the trend at that snapshot's as-of — never a future week
+    tr1 = forecast.snapshot_trend(db_path=db_path, through_id=w1)
+    assert tr1["as_of_date"].tolist() == ["2026-07-01"]
+
+
+def test_stalled_evidence_shows_threshold(db_path):
+    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
+                  "w1", "2026-06-27")
+    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
+                        "w2", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    assert "flags at 45" in flags[flags["rule"] == "stalled"].iloc[0]["evidence"]
+
+
+def test_commit_conversion_counts_and_rate(db_path):
+    # Prior week: two commit deals (late stage -> commit) and one upside deal.
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="C1", stage_bucket="late", forecast_category="commit"),
+        opp(opportunity_id="C2", stage_bucket="late", forecast_category="commit"),
+        opp(opportunity_id="U1", stage_bucket="mid", forecast_category="upside"),
+    ], "w1", "2026-07-01")
+    # This week: C1 won, C2 lost, U1 (not a prior commit) irrelevant.
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="C1", stage_bucket="closed_won"),
+        opp(opportunity_id="C2", stage_bucket="closed_lost"),
+        opp(opportunity_id="U1", stage_bucket="mid"),
+    ], "w2", "2026-08-01")
+    cc = forecast.commit_conversion(cur, prior, db_path=db_path)
+    assert cc["prior_commit_count"] == 2
+    assert cc["won"] == 1 and cc["lost"] == 1
+    assert cc["landed_rate"] == pytest.approx(0.5)
+
+
+def test_commit_conversion_matches_wow_delta_name_residuals(db_path):
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="OLD", opportunity_name="Stable Deal",
+            stage_bucket="late", forecast_category="commit"),
+    ], "w1", "2026-07-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="NEW", opportunity_name="Stable Deal",
+            stage_bucket="closed_won"),
+    ], "w2", "2026-08-01")
+    cc = forecast.commit_conversion(cur, prior, db_path=db_path)
+    assert cc["won"] == 1
+    assert cc["disappeared"] == 0
+
+
+def test_commit_conversion_does_not_reuse_id_matched_current_row_by_name(db_path):
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="C1", opportunity_name="Original Name",
+            stage_bucket="late", forecast_category="commit"),
+        opp(opportunity_id="C2", opportunity_name="Current Name",
+            stage_bucket="late", forecast_category="commit"),
+    ], "w1", "2026-07-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="C1", opportunity_name="Current Name",
+            stage_bucket="closed_won"),
+    ], "w2", "2026-08-01")
+    cc = forecast.commit_conversion(cur, prior, db_path=db_path)
+    assert cc["won"] == 1
+    assert cc["disappeared"] == 1
+
+
+def test_commit_conversion_none_without_prior(db_path, sample_snapshot):
+    assert forecast.commit_conversion(sample_snapshot, None, db_path=db_path) is None
