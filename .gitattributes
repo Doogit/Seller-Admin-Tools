@@ -4,3 +4,8 @@
 # check. Without this, autocrlf=true rewrites them to CRLF on checkout.
 web/static/*.css -text
 web/static/*.js  -text
+
+# Frozen parity goldens are byte-compared against LF view-model output. Keep them
+# LF (no CRLF conversion) so the .md byte-identical gate holds on every platform.
+tests/goldens/**/*.md   -text
+tests/goldens/**/*.json -text
