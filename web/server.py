@@ -24,7 +24,7 @@ from fasthtml.common import (  # noqa: E402
 )
 
 from web.components import landing  # noqa: E402
-from web.routes import forecast_narrative, qbr  # noqa: E402
+from web.routes import account_plan, forecast_narrative, qbr  # noqa: E402
 
 STATIC_DIR = REPO_ROOT / "web" / "static"
 
@@ -56,6 +56,7 @@ def index():
 
 forecast_narrative.register(rt)
 qbr.register(rt)
+account_plan.register(rt)
 
 
 if __name__ == "__main__":
