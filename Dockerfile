@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Deps are pinned (streamlit, pandas, python-pptx) and ship manylinux wheels —
 # no build toolchain required.
-COPY requirements.txt .
+COPY requirements.txt constraints.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .

@@ -1,0 +1,40 @@
+name: security-audit
+
+# Dependency vulnerability gate. Runs pip-audit against the declared requirements
+# (a fresh resolve, so it reflects requirements.txt and its constraints, not a
+# drifted local venv) plus the test suite. Fails the build on any known advisory.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"  # weekly, catches newly-published advisories against unchanged pins
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pip-audit
+        run: python -m pip install --upgrade pip pip-audit
+      - name: Audit declared dependencies
+        # requirements.txt includes constraints.txt, so the audit resolves the same
+        # patched dependency floor set used by installs.
+        run: python -m pip_audit -r requirements.txt --strict
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -r requirements.txt
+      - name: Test
+        run: python -m pytest -q

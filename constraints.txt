@@ -1,0 +1,15 @@
+# Security floors for transitive dependencies that sit on the app's live paths.
+# requirements.txt includes this file with `-c constraints.txt`, so the floors
+# apply to normal installs and to the dependency audit gate.
+#
+# These are not direct dependencies, so they don't belong in requirements.txt;
+# a constraints file holds a patched floor without adding them as top-level pins.
+# A constraint is inert until something in the resolution actually pulls the
+# package in, e.g. python-multipart only once python-fasthtml is added.
+
+# Image decoding - pulled in by python-pptx. Many decode-path advisories below 12.3.0.
+pillow>=12.3.0
+
+# Multipart/form parsing - pulled in by python-fasthtml/starlette and sits directly
+# on the file-upload path (account-facts import). DoS-class advisories below 0.0.31.
+python-multipart>=0.0.31

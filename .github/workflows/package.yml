@@ -14,6 +14,7 @@ on:
       - "Dockerfile"
       - ".dockerignore"
       - "requirements.txt"
+      - "constraints.txt"
       - "deploy/**"
       - ".github/workflows/package.yml"
 
