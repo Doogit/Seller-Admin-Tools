@@ -202,6 +202,23 @@ upload `sample_data/energy_pipeline_sample.csv` yourself) → **Forecast Narrati
 > sample data, and the `<details>` blocks show real, reproducible export output.
 > Run the commands above to reproduce either.
 
+## Run it hosted (Azure App Service)
+
+To put the tools on a URL instead of a laptop, `deploy/azure-deploy.ps1` builds a
+container image *inside Azure* (no local Docker) and provisions App Service for
+Containers with the committed sample data baked in — all three tools populated:
+
+```powershell
+az login
+./deploy/azure-deploy.ps1
+```
+
+It serves synthetic data with no auth by default; see
+[deploy/README.md](deploy/README.md) for the one-command Entra (Microsoft
+sign-in) gate to add before using real data. The `Dockerfile` also runs anywhere
+Docker does (`docker build -t seller-admin-tools . && docker run -p 8000:8000
+seller-admin-tools`).
+
 ## Sample data
 
 - `sample_data/energy_pipeline_sample.csv` — 40 **fictional** rows (invented
