@@ -85,6 +85,19 @@ def test_build_md_mirrors_deck(db_path, sample_snapshot):
     assert styles.DRAFT_FOOTER in md
 
 
+def test_builders_reuse_precomputed_gather(db_path, sample_snapshot):
+    # The QBR page computes gather() once and feeds it to both builders; that
+    # path must match letting each builder gather internally.
+    meta = {"team": "Energy", "period": "wk32"}
+    data = deck.gather(sample_snapshot, None, meta, db_path=db_path)
+    assert deck.build_md(sample_snapshot, None, meta, db_path=db_path, data=data) \
+        == deck.build_md(sample_snapshot, None, meta, db_path=db_path)
+    a = Presentation(deck.build_pptx(sample_snapshot, None, meta, db_path=db_path, data=data))
+    b = Presentation(deck.build_pptx(sample_snapshot, None, meta, db_path=db_path))
+    assert [t for s in a.slides for t in _slide_texts(s)] \
+        == [t for s in b.slides for t in _slide_texts(s)]
+
+
 def test_deck_without_sub_vertical_no_traceback(db_path):
     sid = make_snapshot(db_path, [opp(opportunity_id="A1")], "w1", "2026-08-11")
     assert forecast.sub_vertical_split(sid, db_path=db_path) is None

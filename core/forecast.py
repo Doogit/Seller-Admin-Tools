@@ -24,7 +24,8 @@ CATEGORY_VALUES = {"commit", "upside", "pipeline"}
 STAGE_TO_CATEGORY = {"late": "commit", "mid": "upside", "early": "pipeline"}
 
 DELTA_COLUMNS = ["change_type", "opportunity_name", "account_name", "owner", "amount", "detail"]
-FLAG_COLUMNS = ["rule", "opportunity_name", "account_name", "owner", "amount", "evidence"]
+FLAG_COLUMNS = ["rule", "opportunity_name", "account_name", "owner", "amount", "evidence",
+                "opportunity_id"]
 
 
 def _load_rules(rules_path=None) -> dict:
@@ -49,12 +50,31 @@ def _clean(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _name_key(account, opportunity):
+    """Normalized name join key. One definition, used by both _keys and the
+    wow_delta name-join residual pass, so the two never drift."""
+    return "name::" + account + "||" + opportunity
+
+
 def _keys(df: pd.DataFrame) -> pd.Series:
     """Row-level match key: opportunity_id when non-empty, else normalized
     (account_name, opportunity_name) — precedence pinned in docs/PLAN.md."""
     ids = df["opportunity_id"]
-    names = "name::" + df["account_name"] + "||" + df["opportunity_name"]
+    names = _name_key(df["account_name"], df["opportunity_name"])
     return ids.where(ids != "", names)
+
+
+def dedup_flags(flags: pd.DataFrame) -> pd.DataFrame:
+    """One row per flagged opportunity, ID-aware. Distinct deals that share an
+    account/opportunity name but carry different opportunity_ids are kept apart
+    — name-only dedup would collapse them and undercount at-risk."""
+    if flags is None or flags.empty:
+        return flags
+    if "opportunity_id" in flags.columns:
+        keep = ~_keys(flags).duplicated()
+    else:
+        keep = ~flags.duplicated(subset=["account_name", "opportunity_name"])
+    return flags[keep]
 
 
 def _open_with_category(df: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
@@ -110,28 +130,42 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
 
     cur_ids = cur["opportunity_id"]
     pri_ids = pri["opportunity_id"]
-    pri_by_id = {v: i for i, v in pri_ids.items() if v}
+    # Duplicate non-empty IDs within a snapshot can't be trusted as a join key
+    # (last-wins would cross-wire rows), so demote them to the name-join path.
+    cur_dup = set(cur_ids[(cur_ids != "") & cur_ids.duplicated(keep=False)])
+    pri_dup = set(pri_ids[(pri_ids != "") & pri_ids.duplicated(keep=False)])
+    pri_by_id = {v: i for i, v in pri_ids.items() if v and v not in pri_dup}
     matches: list[tuple[int, int]] = []
     matched_pri: set[int] = set()
     unmatched_cur: list[int] = []
 
     for i, cid in cur_ids.items():
-        if cid and cid in pri_by_id and pri_by_id[cid] not in matched_pri:
+        if cid and cid not in cur_dup and cid in pri_by_id \
+                and pri_by_id[cid] not in matched_pri:
             matches.append((i, pri_by_id[cid]))
             matched_pri.add(pri_by_id[cid])
         else:
             unmatched_cur.append(i)
 
     def name_key(df, i):
-        return df.at[i, "account_name"] + "||" + df.at[i, "opportunity_name"]
+        return _name_key(df.at[i, "account_name"], df.at[i, "opportunity_name"])
 
+    residual_pri = [i for i in pri.index if i not in matched_pri]
+    pri_name_keys = pd.Series({i: name_key(pri, i) for i in residual_pri})
+    cur_name_keys = pd.Series({i: name_key(cur, i) for i in unmatched_cur})
+    pri_name_dup = set(pri_name_keys[pri_name_keys.duplicated(keep=False)])
+    cur_name_dup = set(cur_name_keys[cur_name_keys.duplicated(keep=False)])
     pri_by_name = {
-        name_key(pri, i): i for i in pri.index
-        if i not in matched_pri
+        key: i for i, key in pri_name_keys.items()
+        if key not in pri_name_dup
     }
     still_unmatched_cur = []
     for i in unmatched_cur:
-        j = pri_by_name.get(name_key(cur, i))
+        key = cur_name_keys[i]
+        if key in cur_name_dup:
+            still_unmatched_cur.append(i)
+            continue
+        j = pri_by_name.get(key)
         if j is not None and j not in matched_pri:
             matches.append((i, j))
             matched_pri.add(j)
@@ -154,10 +188,16 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
         c, p = cur.loc[ci], pri.loc[pi]
         if c["stage"] != p["stage"]:
             add("moved stage", cur, ci, f"{p['stage']} → {c['stage']}")
-        c_amt = c["amount"] if pd.notna(c["amount"]) else None
-        p_amt = p["amount"] if pd.notna(p["amount"]) else None
-        if c_amt is not None and p_amt is not None and abs(c_amt - p_amt) > 0.005:
-            add("amount changed", cur, ci, f"{fmt_money(p_amt)} → {fmt_money(c_amt)}")
+        c_na, p_na = pd.isna(c["amount"]), pd.isna(p["amount"])
+        if not (c_na and p_na):
+            # A swing to/from a blank amount is a real forecast move — treat the
+            # blank side as $0 for the delta rather than silently dropping it.
+            c_amt = 0.0 if c_na else float(c["amount"])
+            p_amt = 0.0 if p_na else float(p["amount"])
+            if abs(c_amt - p_amt) > 0.005:
+                p_disp = "(blank)" if p_na else fmt_money(p_amt)
+                c_disp = "(blank)" if c_na else fmt_money(c_amt)
+                add("amount changed", cur, ci, f"{p_disp} → {c_disp}")
         if c["close_date"] and p["close_date"] and c["close_date"] > p["close_date"]:
             days = (dt.date.fromisoformat(c["close_date"])
                     - dt.date.fromisoformat(p["close_date"])).days
@@ -165,16 +205,22 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
                 f"close date moved {p['close_date']} → {c['close_date']} (+{days}d)")
 
     for i in still_unmatched_cur:
-        if cur_ids[i]:
+        if cur_ids[i] and cur_ids[i] not in cur_dup:
             add("new", cur, i, "not present last week")
+        elif cur_ids[i] in cur_dup:
+            add("unmatched", cur, i,
+                "duplicate opportunity_id and no unique name match in prior snapshot")
         else:
             add("unmatched", cur, i,
                 "no opportunity_id and no name match in prior snapshot — renamed or ID missing?")
     for i in pri.index:
         if i in matched_pri:
             continue
-        if pri_ids[i]:
+        if pri_ids[i] and pri_ids[i] not in pri_dup:
             add("disappeared", pri, i, "present last week, gone this week")
+        elif pri_ids[i] in pri_dup:
+            add("unmatched", pri, i,
+                "prior-week duplicate opportunity_id with no unique name match this week")
         else:
             add("unmatched", pri, i,
                 "prior-week row with no opportunity_id and no name match this week")
@@ -203,18 +249,32 @@ def stage_distribution(snapshot_id: int, prior_id: int | None = None, db_path=No
     return out.reset_index()
 
 
-def top_deals(snapshot_id: int, n: int = 10, db_path=None) -> pd.DataFrame:
-    """Top open deals by amount with risk-flag names joined."""
+def top_deals(snapshot_id: int, n: int = 10, db_path=None, flags=None) -> pd.DataFrame:
+    """Top open deals by amount with risk-flag names joined. Pass a precomputed
+    `flags` frame to avoid recomputing risk_flags (it walks every prior
+    snapshot) when the caller already has it."""
     df = _clean(store.get_opportunities(snapshot_id, db_path=db_path))
     open_df = df[~df["stage_bucket"].isin(CLOSED_BUCKETS)]
-    top = open_df.sort_values("amount", ascending=False).head(n)
-    flags = risk_flags(snapshot_id, db_path=db_path)
-    flag_map: dict[tuple, list[str]] = {}
+    top = open_df.sort_values(
+        ["amount", "account_name", "opportunity_name"], ascending=[False, True, True]
+    ).head(n)
+    if flags is None:
+        flags = risk_flags(snapshot_id, db_path=db_path)
+    flags = dedup_flags(flags)
+
+    def key_for(row):
+        ident = str(row.get("opportunity_id", "")).strip()
+        if ident:
+            return ident
+        return _name_key(row["account_name"], row["opportunity_name"])
+
+    flag_map: dict[str, list[str]] = {}
     for _, f in flags.iterrows():
-        flag_map.setdefault((f["opportunity_name"], f["account_name"]), []).append(f["rule"])
+        flag_map.setdefault(key_for(f), []).append(f["rule"])
+
     out = top[["opportunity_name", "account_name", "stage", "amount", "close_date", "owner"]].copy()
     out["flags"] = [
-        ", ".join(flag_map.get((r["opportunity_name"], r["account_name"]), []))
+        ", ".join(flag_map.get(key_for(r), []))
         for _, r in top.iterrows()
     ]
     return out.reset_index(drop=True)
@@ -227,7 +287,7 @@ def owner_rollup(snapshot_id: int, db_path=None) -> pd.DataFrame:
     df = _clean(store.get_opportunities(snapshot_id, db_path=db_path))
     open_df, _ = _open_with_category(df)
     flags = risk_flags(snapshot_id, db_path=db_path)
-    flagged = flags.drop_duplicates(subset=["opportunity_name", "account_name"])
+    flagged = dedup_flags(flags)
     at_risk = flagged.groupby("owner")["amount"].sum() if not flagged.empty else pd.Series(dtype="float64")
 
     rows = []
@@ -247,14 +307,12 @@ def owner_rollup(snapshot_id: int, db_path=None) -> pd.DataFrame:
 
 
 def at_risk_total(flags: pd.DataFrame) -> float:
-    """Sum of flagged amounts, de-duplicated per opportunity. Single source for
-    both the QBR deck scorecard and the page metric row so they never diverge."""
+    """Sum of flagged amounts, one row per opportunity (ID-aware dedup). Single
+    source for both the QBR deck scorecard and the page metric row so they never
+    diverge."""
     if flags is None or flags.empty:
         return 0.0
-    return float(
-        flags.drop_duplicates(subset=["opportunity_name", "account_name"])["amount"]
-        .fillna(0).sum()
-    )
+    return float(dedup_flags(flags)["amount"].fillna(0).sum())
 
 
 def sub_vertical_split(snapshot_id: int, db_path=None) -> pd.DataFrame | None:
@@ -290,15 +348,22 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
         frame = _clean(store.get_opportunities(int(srow["id"]), db_path=db_path))
         if frame.empty:
             continue
-        keymap = {k: i for i, k in _keys(frame).items()}
+        fkeys = _keys(frame)
+        # Duplicate keys within a prior snapshot are ambiguous — dropping them
+        # (rather than last-wins) avoids comparing a current row against an
+        # arbitrary namesake, the same discipline wow_delta uses.
+        dup = set(fkeys[fkeys.duplicated(keep=False)])
+        keymap = {k: i for i, k in fkeys.items() if k not in dup}
         priors.append((dt.date.fromisoformat(srow["as_of_date"]), frame, keymap))
 
     open_df = cur[~cur["stage_bucket"].isin(CLOSED_BUCKETS)]
     cur_keys = _keys(cur)
+    cur_dup = set(cur_keys[cur_keys.duplicated(keep=False)])
 
     def add(rule, row, evidence):
         flags.append({
             "rule": rule,
+            "opportunity_id": row["opportunity_id"],
             "opportunity_name": row["opportunity_name"],
             "account_name": row["account_name"],
             "owner": row["owner"],
@@ -312,13 +377,17 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
     max_observed = 0
     for i, row in open_df.iterrows():
         key = cur_keys[i]
+        if key in cur_dup:
+            continue  # ambiguous identity this week — can't trace its history
         same_stage_since = cur_as_of
         observed_since = cur_as_of
         moved = False
+        seen = False
         for as_of, frame, keymap in priors:
             j = keymap.get(key)
             if j is None:
                 break
+            seen = True
             observed_since = as_of
             if frame.at[j, "stage"] == row["stage"]:
                 same_stage_since = as_of
@@ -330,7 +399,9 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
         if age >= threshold:
             add("stalled", row,
                 f"in stage '{row['stage']}' for {age} days (since {same_stage_since})")
-        elif not moved and observed < threshold:
+        elif seen and not moved and observed < threshold:
+            # Seen before but not long enough to judge. Brand-new deals (never
+            # in any prior) are simply new, not "insufficient history".
             insufficient += 1
             max_observed = max(max_observed, observed)
     if insufficient:
@@ -344,7 +415,10 @@ def risk_flags(snapshot_id: int, db_path=None, rules_path=None) -> pd.DataFrame:
     if priors:
         _, pframe, pkeymap = priors[0]
         for i, row in open_df.iterrows():
-            j = pkeymap.get(cur_keys[i])
+            key = cur_keys[i]
+            if key in cur_dup:
+                continue
+            j = pkeymap.get(key)
             if j is None:
                 continue
             c_close, p_close = row["close_date"], pframe.at[j, "close_date"]

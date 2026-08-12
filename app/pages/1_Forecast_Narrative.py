@@ -47,7 +47,7 @@ prior_rollup = forecast.bucket_rollup(prior_id) if prior_id else None
 deltas = forecast.wow_delta(current_id, prior_id)
 flags = forecast.risk_flags(current_id)
 
-ui.metric_row(rollup, prior_rollup, quota or None, ui.at_risk_total(flags))
+ui.metric_row(rollup, prior_rollup, quota or None, forecast.at_risk_total(flags))
 ui.unmatched_warning(deltas)
 
 # Drafts — regenerate only on explicit confirm so edits survive reruns

@@ -7,6 +7,7 @@ commit:
   wow_flat: ", flat week-over-week"
   coverage: " Coverage against the {quota} quota is {coverage}x."
   derived_note: " Buckets are derived from stage — map forecast_category for accuracy."
+  unclassified_note: " Excludes {amount} across {n} open deal(s) in unmapped stages — not counted toward coverage."
 upside:
   base: "Upside totals {upside} across {upside_count} deal(s)."
   mover: " {name} ({amount}): {what}."

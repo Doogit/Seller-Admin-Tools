@@ -16,8 +16,8 @@ stages:
   closed won: closed_won
   closed lost: closed_lost
   # Numbered enterprise-stage labels (examples)
-  01 inspire: early
-  02 design: mid
-  03 empower: mid
-  04 achieve: late
-  05 realize: closed_won
+  01 qualify: early
+  02 develop: mid
+  03 propose: mid
+  04 commit: late
+  05 closed won: closed_won

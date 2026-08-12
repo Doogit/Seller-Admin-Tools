@@ -9,7 +9,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 
 from core import crosswalk, styles
-from core.deck import SLIDE_H, SLIDE_W, _add_footer, _add_title
+from core.deck import SLIDE_H, SLIDE_W, add_footer, add_title
 from core.formatting import fmt_money
 
 PLAY_ACTIONS = {
@@ -23,9 +23,9 @@ PLAY_ACTIONS = {
 def compose(account_row, gap_df: pd.DataFrame, whitespace: dict,
             pipeline_df: pd.DataFrame) -> dict:
     """Assemble the structured account-plan sections from precomputed inputs."""
-    install = crosswalk._split(account_row.get("install_base"))
-    incumbents = crosswalk._split(account_row.get("incumbent_tools"))
-    scopes = crosswalk._split(account_row.get("regulatory_scope"))
+    install = crosswalk.split_list(account_row.get("install_base"))
+    incumbents = crosswalk.split_list(account_row.get("incumbent_tools"))
+    scopes = crosswalk.split_list(account_row.get("regulatory_scope"))
 
     open_pipeline = pd.DataFrame()
     if pipeline_df is not None and not pipeline_df.empty:
@@ -68,7 +68,7 @@ def compose(account_row, gap_df: pd.DataFrame, whitespace: dict,
         or account_row.get("account_name"),
         "summary": summary_bits,
         "footprint": {"install_base": install, "incumbent_tools": incumbents,
-                      "exec_contacts": crosswalk._split(account_row.get("exec_contacts"))},
+                      "exec_contacts": crosswalk.split_list(account_row.get("exec_contacts"))},
         "gap_table": gap_df,
         "pipeline": open_pipeline,
         "whitespace": whitespace,
@@ -161,7 +161,7 @@ def plan_pptx(sections: dict, disclaimer: str) -> BytesIO:
 
     # 1 — summary
     s = prs.slides.add_slide(blank)
-    _add_title(s, f"Account plan — {sections['account_display']}", styles.TITLE_SIZE_PT)
+    add_title(s, f"Account plan — {sections['account_display']}", styles.TITLE_SIZE_PT)
     fp = sections["footprint"]
     bullets_box(s, sections["summary"] + [
         "Installed: " + ("; ".join(fp["install_base"]) or "(none)"),
@@ -170,7 +170,7 @@ def plan_pptx(sections: dict, disclaimer: str) -> BytesIO:
 
     # 2 — gap table
     s = prs.slides.add_slide(blank)
-    _add_title(s, "Obligation → capability → gap")
+    add_title(s, "Obligation → capability → gap")
     gaps = sections["gap_table"]
     headers = ["Obligation", "Capability", "Product", "Status"]
     table = s.shapes.add_table(
@@ -192,7 +192,7 @@ def plan_pptx(sections: dict, disclaimer: str) -> BytesIO:
 
     # 3 — pipeline + whitespace
     s = prs.slides.add_slide(blank)
-    _add_title(s, "Open pipeline & whitespace")
+    add_title(s, "Open pipeline & whitespace")
     ws = sections["whitespace"]
     items = [f"Whitespace vs gap capabilities: {fmt_money(ws['whitespace_amount'])}"]
     for _, r in sections["pipeline"].head(8).iterrows():
@@ -211,11 +211,11 @@ def plan_pptx(sections: dict, disclaimer: str) -> BytesIO:
 
     # 4 — next actions
     s = prs.slides.add_slide(blank)
-    _add_title(s, "Next actions")
+    add_title(s, "Next actions")
     bullets_box(s, sections["next_actions"] + [sections["relationship_map"]])
 
     for slide in prs.slides:
-        _add_footer(slide)
+        add_footer(slide)
     # disclaimer on the gap-table slide
     box = prs.slides[1].shapes.add_textbox(
         Inches(0.4), SLIDE_H - Inches(0.75), SLIDE_W - Inches(0.8), Inches(0.3)

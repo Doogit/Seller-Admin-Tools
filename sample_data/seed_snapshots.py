@@ -38,14 +38,14 @@ from core import importer, ingest, mapping
 
 SAMPLE = REPO_ROOT / "sample_data" / "energy_pipeline_sample.csv"
 
-PRIOR_STAGE = {"04 Achieve": "03 Empower", "03 Empower": "02 Design", "02 Design": "01 Inspire"}
+PRIOR_STAGE = {"04 Commit": "03 Propose", "03 Propose": "02 Develop", "02 Develop": "01 Qualify"}
 KEEP_STAGE_IDS = {"OP-1005", "OP-1024"}  # stalled candidates
 DROP_FROM_PRIOR = {"OP-1037", "OP-1026"}
 DROP_NAMES_FROM_PRIOR = {"Emergency Ops Identity"}
 
 PRIOR_ONLY_ROW = {
     "Account": "Delta Refining", "Opportunity": "Legacy AV Renewal",
-    "Opportunity ID": "OP-1099", "Sales Stage": "02 Design",
+    "Opportunity ID": "OP-1099", "Sales Stage": "02 Develop",
     "Est. Revenue": "$60,000.00", "Close Dt": "9/15/2026",
     "Opportunity Owner": "Marcus Webb", "Forecast Category": "Pipeline",
     "Probability (%)": "25", "Last Activity": "6/1/2026",

@@ -1,41 +1,41 @@
 Account,Opportunity,Opportunity ID,Sales Stage,Est. Revenue,Close Dt,Opportunity Owner,Forecast Category,Probability (%),Last Activity,Sub-Vertical,Product,Exec Sponsor,Created On
-Meridian Energy,Grid Modernization Security,OP-1001,04 Achieve,"$1,250,000.00",9/25/2026,Kevin Dugas,Commit,80,7/28/2026,Power & Utilities,Microsoft Sentinel,Dana Whitfield,1/15/2026
-Meridian Energy Corp,OT Threat Monitoring,OP-1002,03 Empower,"$640,000.00",10/30/2026,Kevin Dugas,Upside,60,7/21/2026,Power & Utilities,Defender for OT,Dana Whitfield,2/20/2026
-Cascade Power & Light,SOC Modernization,OP-1003,02 Design,"$480,000.00",11/19/2026,Priya Sharma,Pipeline,35,6/30/2026,Power & Utilities,Microsoft Sentinel,,3/2/2026
-Gulfstream Petroleum,Identity Consolidation,OP-1004,03 Empower,"$750,000.00",9/18/2026,Marcus Webb,Upside,55,7/25/2026,Oil & Gas,Entra ID,,2/11/2026
-TransCanyon Pipelines,Pipeline SCADA Security,OP-1005,04 Achieve,"$2,100,000.00",8/28/2026,Elena Rodriguez,Commit,85,8/1/2026,Pipelines,Defender for OT,Robert Chen,11/10/2025
-Bluewater Utilities,Data Governance Rollout,OP-1006,02 Design,"$310,000.00",12/17/2026,Priya Sharma,Pipeline,30,6/15/2026,Power & Utilities,Purview,Maria Santos,4/1/2026
-Ironpeak Oil,Endpoint Refresh,OP-1007,01 Inspire,"$95,000.00",03/04/2026,Marcus Webb,,10,5/20/2026,Oil & Gas,Defender for Endpoint,,1/8/2026
+Meridian Energy,Grid Modernization Security,OP-1001,04 Commit,"$1,250,000.00",9/25/2026,Kevin Dugas,Commit,80,7/28/2026,Power & Utilities,Microsoft Sentinel,Dana Whitfield,1/15/2026
+Meridian Energy Corp,OT Threat Monitoring,OP-1002,03 Propose,"$640,000.00",10/30/2026,Kevin Dugas,Upside,60,7/21/2026,Power & Utilities,Defender for OT,Dana Whitfield,2/20/2026
+Cascade Power & Light,SOC Modernization,OP-1003,02 Develop,"$480,000.00",11/19/2026,Priya Sharma,Pipeline,35,6/30/2026,Power & Utilities,Microsoft Sentinel,,3/2/2026
+Gulfstream Petroleum,Identity Consolidation,OP-1004,03 Propose,"$750,000.00",9/18/2026,Marcus Webb,Upside,55,7/25/2026,Oil & Gas,Entra ID,,2/11/2026
+TransCanyon Pipelines,Pipeline SCADA Security,OP-1005,04 Commit,"$2,100,000.00",8/28/2026,Elena Rodriguez,Commit,85,8/1/2026,Pipelines,Defender for OT,Robert Chen,11/10/2025
+Bluewater Utilities,Data Governance Rollout,OP-1006,02 Develop,"$310,000.00",12/17/2026,Priya Sharma,Pipeline,30,6/15/2026,Power & Utilities,Purview,Maria Santos,4/1/2026
+Ironpeak Oil,Endpoint Refresh,OP-1007,01 Qualify,"$95,000.00",03/04/2026,Marcus Webb,,10,5/20/2026,Oil & Gas,Defender for Endpoint,,1/8/2026
 Prairie Wind Cooperative,Wind Farm OT Assessment,OP-1008,Deal Review,"$150,000.00",10/22/2026,Elena Rodriguez,Pipeline,25,7/2/2026,Power & Utilities,Defender for OT,,5/5/2026
-Redrock Midstream,Compliance Reporting Automation,OP-1009,02 Design,"$220,000.00",11/13/2026,Kevin Dugas,Pipeline,30,6/28/2026,Pipelines,Purview,,4/18/2026
-Lakeshore Gas,Credential Cleanup,,01 Inspire,"$45,000.00",9/30/2026,Priya Sharma,,15,5/30/2026,Oil & Gas,Entra ID,,5/22/2026
-Voltaic Grid Systems,Zero Trust Roadmap,OP-1011,03 Empower,"$560,000.00",10/16/2026,Marcus Webb,Upside,50,7/19/2026,Power & Utilities,Entra ID,Alan Park,1/30/2026
-Summit Hydro,Refund Adjustment,OP-1012,05 Realize,"($15,000.00)",7/24/2026,Priya Sharma,,100,7/10/2026,Power & Utilities,Microsoft Sentinel,,12/12/2025
+Redrock Midstream,Compliance Reporting Automation,OP-1009,02 Develop,"$220,000.00",11/13/2026,Kevin Dugas,Pipeline,30,6/28/2026,Pipelines,Purview,,4/18/2026
+Lakeshore Gas,Credential Cleanup,,01 Qualify,"$45,000.00",9/30/2026,Priya Sharma,,15,5/30/2026,Oil & Gas,Entra ID,,5/22/2026
+Voltaic Grid Systems,Zero Trust Roadmap,OP-1011,03 Propose,"$560,000.00",10/16/2026,Marcus Webb,Upside,50,7/19/2026,Power & Utilities,Entra ID,Alan Park,1/30/2026
+Summit Hydro,Refund Adjustment,OP-1012,05 Closed Won,"($15,000.00)",7/24/2026,Priya Sharma,,100,7/10/2026,Power & Utilities,Microsoft Sentinel,,12/12/2025
 Delta Refining,Refinery Network Segmentation,OP-1013,On Hold,"$430,000.00",13/32/2026,Marcus Webb,Pipeline,20,4/15/2026,Oil & Gas,Defender for OT,,2/27/2026
-NorthStar Transmission,Substation Security Pilot,OP-1014,02 Design,"$380,000.00",10/29/2026,Elena Rodriguez,Upside,45,7/23/2026,Power & Utilities,Defender for OT,Susan Ito,3/14/2026
-Meridian Energy,Purview Data Map,OP-1015,01 Inspire,"$180,000.00",12/18/2026,Kevin Dugas,Pipeline,20,6/5/2026,Power & Utilities,Purview,Dana Whitfield,5/9/2026
-Cascade Power & Light,Field Device Hardening,OP-1016,03 Empower,"$525,000.00",9/24/2026,Priya Sharma,Commit,70,7/29/2026,Power & Utilities,Defender for OT,Wes Grant,1/22/2026
-Gulfstream Petroleum,Offshore Platform Monitoring,OP-1017,04 Achieve,"$1,750,000.00",8/21/2026,Marcus Webb,Commit,90,8/3/2026,Oil & Gas,Defender for OT,Colin Reyes,10/6/2025
-TransCanyon Pipelines,TSA Directive Gap Closure,OP-1018,02 Design,"$690,000.00",11/20/2026,Elena Rodriguez,Upside,40,7/8/2026,Pipelines,Microsoft Sentinel,Robert Chen,4/27/2026
-Bluewater Utilities,Insider Risk Program,OP-1019,01 Inspire,"$125,000.00",04/03/2026,Priya Sharma,,15,5/12/2026,Power & Utilities,Purview,,1/9/2026
-Heliograph Solar,Inverter Fleet Security,OP-1020,02 Design,"$260,000.00",10/23/2026,Elena Rodriguez,Pipeline,35,6/24/2026,Power & Utilities,GridWidget Pro,,5/16/2026
-Ironpeak Oil,SIEM Migration,OP-1021,03 Empower,"$820,000.00",9/17/2026,Marcus Webb,Upside,60,7/27/2026,Oil & Gas,Microsoft Sentinel,Gina Torres,2/6/2026
-Prairie Wind Cooperative,Member Portal Identity,OP-1022,02 Design,"$140,000.00",11/25/2026,Elena Rodriguez,Pipeline,30,6/18/2026,Power & Utilities,Entra ID,,4/9/2026
-Redrock Midstream,Terminal OT Visibility,OP-1023,04 Achieve,"$980,000.00",9/29/2026,Kevin Dugas,Commit,75,8/4/2026,Pipelines,Defender for OT,Hank Lowell,12/19/2025
-Lakeshore Gas,Cloud Posture Cleanup,OP-1024,02 Design,"$205,000.00",12/16/2026,Priya Sharma,Pipeline,25,6/9/2026,Oil & Gas,Defender for Cloud,,5/28/2026
-Voltaic Grid Systems,SOC Co-Managed Service,OP-1025,04 Achieve,"$1,150,000.00",8/27/2026,Marcus Webb,Commit,85,8/6/2026,Power & Utilities,Microsoft Sentinel,Alan Park,11/21/2025
-Summit Hydro,Dam Control Network Audit,OP-1026,01 Inspire,"$88,000.00",10/15/2026,Priya Sharma,,10,5/26/2026,Power & Utilities,Defender for OT,,6/2/2026
-Delta Refining,Purview Compliance Suite,OP-1027,02 Design,"$340,000.00",11/18/2026,Marcus Webb,Pipeline,35,7/1/2026,Oil & Gas,Purview,Nadia Farouk,3/20/2026
-NorthStar Transmission,NERC CIP Evidence Automation,OP-1028,03 Empower,"$610,000.00",10/28/2026,Elena Rodriguez,Upside,55,7/24/2026,Power & Utilities,Purview,Susan Ito,2/13/2026
-Meridian Energy Corp,Endpoint Fleet Upgrade,OP-1029,02 Design,"$295,000.00",11/24/2026,Kevin Dugas,Pipeline,30,6/22/2026,Power & Utilities,Defender for Endpoint,Dana Whitfield,4/30/2026
-Cascade Power & Light,Emergency Ops Identity,,01 Inspire,"$72,000.00",12/22/2026,Priya Sharma,,15,5/18/2026,Power & Utilities,Entra ID,,6/11/2026
-Gulfstream Petroleum,Refined Products Analytics Security,OP-1031,02 Design,"$410,000.00",10/21/2026,Marcus Webb,Pipeline,40,6/26/2026,Oil & Gas,Defender for Cloud,Colin Reyes,3/6/2026
-TransCanyon Pipelines,Control Room Zero Trust,OP-1032,03 Empower,"$880,000.00",9/23/2026,Elena Rodriguez,Upside,65,7/30/2026,Pipelines,Entra ID,Robert Chen,1/26/2026
-Bluewater Utilities,Meter Data Protection,OP-1033,02 Design,"$230,000.00",11/12/2026,Priya Sharma,Pipeline,25,6/13/2026,Power & Utilities,Purview,Maria Santos,4/23/2026
-Heliograph Solar,Cloud Landing Zone Security,OP-1034,01 Inspire,"$110,000.00",12/15/2026,Elena Rodriguez,,20,5/29/2026,Power & Utilities,Defender for Cloud,,6/19/2026
-Ironpeak Oil,Drilling Ops Endpoint Protection,OP-1035,04 Achieve,"$1,020,000.00",8/26/2026,Marcus Webb,Commit,80,8/5/2026,Oil & Gas,Defender for Endpoint,Gina Torres,10/29/2025
-Prairie Wind Cooperative,Grid Edge Threat Detection,OP-1036,02 Design,"$175,000.00",10/27/2026,Elena Rodriguez,Pipeline,30,6/20/2026,Power & Utilities,Microsoft Sentinel,,5/13/2026
-Redrock Midstream,Pipeline Scheduling App Security,OP-1037,01 Inspire,"$130,000.00",11/17/2026,Kevin Dugas,,15,5/25/2026,Pipelines,Defender for Cloud,,6/8/2026
-Lakeshore Gas,Gas Trading Desk Compliance,OP-1038,03 Empower,"$540,000.00",9/22/2026,Priya Sharma,Upside,50,7/17/2026,Oil & Gas,Purview,Ivan Petrov,2/25/2026
-Voltaic Grid Systems,DER Management Security,OP-1039,02 Design,"$325,000.00",11/23/2026,Marcus Webb,Pipeline,35,6/27/2026,Power & Utilities,Defender for OT,Alan Park,4/14/2026
-Summit Hydro,Turbine Telemetry Protection,OP-1040,03 Empower,"$460,000.00",10/20/2026,Priya Sharma,Upside,45,7/22/2026,Power & Utilities,Defender for OT,,3/11/2026
+NorthStar Transmission,Substation Security Pilot,OP-1014,02 Develop,"$380,000.00",10/29/2026,Elena Rodriguez,Upside,45,7/23/2026,Power & Utilities,Defender for OT,Susan Ito,3/14/2026
+Meridian Energy,Purview Data Map,OP-1015,01 Qualify,"$180,000.00",12/18/2026,Kevin Dugas,Pipeline,20,6/5/2026,Power & Utilities,Purview,Dana Whitfield,5/9/2026
+Cascade Power & Light,Field Device Hardening,OP-1016,03 Propose,"$525,000.00",9/24/2026,Priya Sharma,Commit,70,7/29/2026,Power & Utilities,Defender for OT,Wes Grant,1/22/2026
+Gulfstream Petroleum,Offshore Platform Monitoring,OP-1017,04 Commit,"$1,750,000.00",8/21/2026,Marcus Webb,Commit,90,8/3/2026,Oil & Gas,Defender for OT,Colin Reyes,10/6/2025
+TransCanyon Pipelines,TSA Directive Gap Closure,OP-1018,02 Develop,"$690,000.00",11/20/2026,Elena Rodriguez,Upside,40,7/8/2026,Pipelines,Microsoft Sentinel,Robert Chen,4/27/2026
+Bluewater Utilities,Insider Risk Program,OP-1019,01 Qualify,"$125,000.00",04/03/2026,Priya Sharma,,15,5/12/2026,Power & Utilities,Purview,,1/9/2026
+Heliograph Solar,Inverter Fleet Security,OP-1020,02 Develop,"$260,000.00",10/23/2026,Elena Rodriguez,Pipeline,35,6/24/2026,Power & Utilities,GridWidget Pro,,5/16/2026
+Ironpeak Oil,SIEM Migration,OP-1021,03 Propose,"$820,000.00",9/17/2026,Marcus Webb,Upside,60,7/27/2026,Oil & Gas,Microsoft Sentinel,Gina Torres,2/6/2026
+Prairie Wind Cooperative,Member Portal Identity,OP-1022,02 Develop,"$140,000.00",11/25/2026,Elena Rodriguez,Pipeline,30,6/18/2026,Power & Utilities,Entra ID,,4/9/2026
+Redrock Midstream,Terminal OT Visibility,OP-1023,04 Commit,"$980,000.00",9/29/2026,Kevin Dugas,Commit,75,8/4/2026,Pipelines,Defender for OT,Hank Lowell,12/19/2025
+Lakeshore Gas,Cloud Posture Cleanup,OP-1024,02 Develop,"$205,000.00",12/16/2026,Priya Sharma,Pipeline,25,6/9/2026,Oil & Gas,Defender for Cloud,,5/28/2026
+Voltaic Grid Systems,SOC Co-Managed Service,OP-1025,04 Commit,"$1,150,000.00",8/27/2026,Marcus Webb,Commit,85,8/6/2026,Power & Utilities,Microsoft Sentinel,Alan Park,11/21/2025
+Summit Hydro,Dam Control Network Audit,OP-1026,01 Qualify,"$88,000.00",10/15/2026,Priya Sharma,,10,5/26/2026,Power & Utilities,Defender for OT,,6/2/2026
+Delta Refining,Purview Compliance Suite,OP-1027,02 Develop,"$340,000.00",11/18/2026,Marcus Webb,Pipeline,35,7/1/2026,Oil & Gas,Purview,Nadia Farouk,3/20/2026
+NorthStar Transmission,NERC CIP Evidence Automation,OP-1028,03 Propose,"$610,000.00",10/28/2026,Elena Rodriguez,Upside,55,7/24/2026,Power & Utilities,Purview,Susan Ito,2/13/2026
+Meridian Energy Corp,Endpoint Fleet Upgrade,OP-1029,02 Develop,"$295,000.00",11/24/2026,Kevin Dugas,Pipeline,30,6/22/2026,Power & Utilities,Defender for Endpoint,Dana Whitfield,4/30/2026
+Cascade Power & Light,Emergency Ops Identity,,01 Qualify,"$72,000.00",12/22/2026,Priya Sharma,,15,5/18/2026,Power & Utilities,Entra ID,,6/11/2026
+Gulfstream Petroleum,Refined Products Analytics Security,OP-1031,02 Develop,"$410,000.00",10/21/2026,Marcus Webb,Pipeline,40,6/26/2026,Oil & Gas,Defender for Cloud,Colin Reyes,3/6/2026
+TransCanyon Pipelines,Control Room Zero Trust,OP-1032,03 Propose,"$880,000.00",9/23/2026,Elena Rodriguez,Upside,65,7/30/2026,Pipelines,Entra ID,Robert Chen,1/26/2026
+Bluewater Utilities,Meter Data Protection,OP-1033,02 Develop,"$230,000.00",11/12/2026,Priya Sharma,Pipeline,25,6/13/2026,Power & Utilities,Purview,Maria Santos,4/23/2026
+Heliograph Solar,Cloud Landing Zone Security,OP-1034,01 Qualify,"$110,000.00",12/15/2026,Elena Rodriguez,,20,5/29/2026,Power & Utilities,Defender for Cloud,,6/19/2026
+Ironpeak Oil,Drilling Ops Endpoint Protection,OP-1035,04 Commit,"$1,020,000.00",8/26/2026,Marcus Webb,Commit,80,8/5/2026,Oil & Gas,Defender for Endpoint,Gina Torres,10/29/2025
+Prairie Wind Cooperative,Grid Edge Threat Detection,OP-1036,02 Develop,"$175,000.00",10/27/2026,Elena Rodriguez,Pipeline,30,6/20/2026,Power & Utilities,Microsoft Sentinel,,5/13/2026
+Redrock Midstream,Pipeline Scheduling App Security,OP-1037,01 Qualify,"$130,000.00",11/17/2026,Kevin Dugas,,15,5/25/2026,Pipelines,Defender for Cloud,,6/8/2026
+Lakeshore Gas,Gas Trading Desk Compliance,OP-1038,03 Propose,"$540,000.00",9/22/2026,Priya Sharma,Upside,50,7/17/2026,Oil & Gas,Purview,Ivan Petrov,2/25/2026
+Voltaic Grid Systems,DER Management Security,OP-1039,02 Develop,"$325,000.00",11/23/2026,Marcus Webb,Pipeline,35,6/27/2026,Power & Utilities,Defender for OT,Alan Park,4/14/2026
+Summit Hydro,Turbine Telemetry Protection,OP-1040,03 Propose,"$460,000.00",10/20/2026,Priya Sharma,Upside,45,7/22/2026,Power & Utilities,Defender for OT,,3/11/2026

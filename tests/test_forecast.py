@@ -11,7 +11,7 @@ def opp(**kw):
     base = {
         "account_name": "acme power", "account_name_raw": "Acme Power",
         "opportunity_name": "Deal", "opportunity_id": "",
-        "stage": "02 Design", "stage_bucket": "mid",
+        "stage": "02 Develop", "stage_bucket": "mid",
         "amount": 100000.0, "close_date": "2026-12-01",
         "owner": "kevin dugas", "owner_raw": "Kevin Dugas",
         "forecast_category": None, "probability": None,
@@ -41,7 +41,7 @@ def test_rollup_math_on_sample(db_path, sample_snapshot):
     assert rollup["total_open"] == pytest.approx(
         rollup["commit"] + rollup["upside"] + rollup["pipeline"]
     )
-    # closed_won (05 Realize) row excluded from open totals
+    # closed_won (05 Closed Won) row excluded from open totals
     df = store.get_opportunities(sample_snapshot, db_path=db_path)
     open_sum = df[~df["stage_bucket"].isin(["closed_won", "closed_lost"])]["amount"].sum()
     assert rollup["total_open"] + rollup["unclassified"] == pytest.approx(open_sum)
@@ -76,12 +76,12 @@ def test_unmatched_bucket_when_no_id_and_names_diverge(db_path):
 
 def test_mixed_id_and_name_matching(db_path):
     prior = make_snapshot(db_path, [
-        opp(opportunity_id="A1", opportunity_name="ID Deal", stage="02 Design"),
+        opp(opportunity_id="A1", opportunity_name="ID Deal", stage="02 Develop"),
         opp(opportunity_name="Name Deal", amount=50000.0),
         opp(opportunity_id="G1", opportunity_name="Gone Deal"),
     ], "w1", "2026-08-01")
     cur = make_snapshot(db_path, [
-        opp(opportunity_id="A1", opportunity_name="ID Deal", stage="03 Empower",
+        opp(opportunity_id="A1", opportunity_name="ID Deal", stage="03 Propose",
             stage_bucket="mid"),
         opp(opportunity_name="Name Deal", amount=75000.0),
         opp(opportunity_id="N1", opportunity_name="Brand New"),
@@ -94,6 +94,43 @@ def test_mixed_id_and_name_matching(db_path):
     assert by_type["new"] == ["Brand New"]          # has ID -> trusted new
     assert by_type["disappeared"] == ["Gone Deal"]  # had ID -> trusted disappeared
     assert by_type["unmatched"] == ["Mystery Deal"]  # no ID, no name match
+
+
+def test_duplicate_id_demotes_to_name_join(db_path):
+    # Two rows share opportunity_id "D1" in both snapshots. Last-wins on the ID
+    # key would cross-wire them and report phantom moves on an unchanged pair;
+    # demoting duplicates to the name-join path pins each row to its true match.
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="D1", opportunity_name="Dup A", stage="02 Develop"),
+        opp(opportunity_id="D1", opportunity_name="Dup B", stage="02 Develop"),
+        opp(opportunity_id="U1", opportunity_name="Unique Deal", stage="02 Develop"),
+    ], "w1", "2026-08-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="D1", opportunity_name="Dup A", stage="02 Develop"),
+        opp(opportunity_id="D1", opportunity_name="Dup B", stage="03 Propose",
+            stage_bucket="mid"),
+        opp(opportunity_id="U1", opportunity_name="Unique Deal", stage="02 Develop"),
+    ], "w2", "2026-08-08")
+    deltas = forecast.wow_delta(cur, prior, db_path=db_path)
+    by_type = deltas.groupby("change_type")["opportunity_name"].apply(list).to_dict()
+    assert by_type == {"moved stage": ["Dup B"]}  # only the real change, no phantoms
+
+
+def test_duplicate_name_residuals_do_not_last_wins_match(db_path):
+    # No-ID duplicate name keys are ambiguous in the same way duplicate IDs are:
+    # last-wins would cross-wire the first current row to the second prior row
+    # and report a false amount change.
+    prior = make_snapshot(db_path, [
+        opp(opportunity_name="Renewal", amount=100000.0),
+        opp(opportunity_name="Renewal", amount=200000.0),
+    ], "w1", "2026-08-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_name="Renewal", amount=100000.0),
+        opp(opportunity_name="Renewal", amount=200000.0),
+    ], "w2", "2026-08-08")
+    deltas = forecast.wow_delta(cur, prior, db_path=db_path)
+    assert not (deltas["change_type"] == "amount changed").any()
+    assert deltas["change_type"].tolist() == ["unmatched", "unmatched", "unmatched", "unmatched"]
 
 
 def test_slip_detected(db_path):
@@ -110,9 +147,9 @@ def test_slip_detected(db_path):
 # --- risk flags ---
 
 def test_stalled_fires_at_45_day_boundary(db_path):
-    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                   "w1", "2026-06-27")  # exactly 45 days before as-of
-    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                         "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     stalled = flags[flags["rule"] == "stalled"]
@@ -121,9 +158,9 @@ def test_stalled_fires_at_45_day_boundary(db_path):
 
 
 def test_stalled_insufficient_history_reports_not_fires(db_path):
-    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                   "w1", "2026-07-12")  # 30 days observed
-    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                         "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     assert flags[flags["rule"] == "stalled"].empty
@@ -131,9 +168,9 @@ def test_stalled_insufficient_history_reports_not_fires(db_path):
 
 
 def test_stalled_silent_when_stage_advanced(db_path):
-    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Design")],
+    make_snapshot(db_path, [opp(opportunity_id="R1", stage="02 Develop")],
                   "w1", "2026-06-01")  # 71 days back, but stage changed since
-    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="03 Empower")],
+    cur = make_snapshot(db_path, [opp(opportunity_id="R1", stage="03 Propose")],
                         "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     assert flags[flags["rule"] == "stalled"].empty
@@ -210,6 +247,142 @@ def test_at_risk_total_dedups_and_handles_empty(db_path, sample_snapshot):
     assert forecast.at_risk_total(flags) == pytest.approx(manual)
     assert forecast.at_risk_total(flags.iloc[0:0]) == 0.0
     assert forecast.at_risk_total(None) == 0.0
+
+
+# --- session-2 review fixes ---
+
+def test_amount_change_emitted_when_one_side_blank(db_path):
+    # A committed amount going to blank week-over-week is a real forecast swing,
+    # not a non-event — it must surface as an "amount changed" row.
+    prior = make_snapshot(db_path, [opp(opportunity_id="Z1", amount=500000.0)],
+                          "w1", "2026-08-01")
+    cur = make_snapshot(db_path, [opp(opportunity_id="Z1", amount=None)],
+                        "w2", "2026-08-08")
+    deltas = forecast.wow_delta(cur, prior, db_path=db_path)
+    changed = deltas[deltas["change_type"] == "amount changed"]
+    assert len(changed) == 1
+    assert "(blank)" in changed.iloc[0]["detail"]
+
+
+def test_risk_flags_demote_ambiguous_duplicate_ids(db_path):
+    # Prior snapshot has two rows sharing id "X" (last-wins would pick the
+    # stage-unchanged one and mis-fire stalled). Ambiguous keys are demoted.
+    make_snapshot(db_path, [
+        opp(opportunity_id="X", opportunity_name="Dup A", stage="03 Propose"),
+        opp(opportunity_id="X", opportunity_name="Dup B", stage="02 Develop"),
+    ], "w1", "2026-06-01")  # 71 days back
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="X", opportunity_name="Reconciled", stage="02 Develop"),
+    ], "w2", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    assert flags[flags["rule"] == "stalled"].empty  # no trusted history -> no flag
+
+
+def test_stalled_note_excludes_brand_new_opps(db_path):
+    # OLD is seen-but-short (counts); NEW is absent from every prior (brand-new,
+    # not "insufficient history").
+    make_snapshot(db_path, [opp(opportunity_id="OLD", stage="02 Develop")],
+                  "w1", "2026-07-12")  # 30 days observed
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="OLD", stage="02 Develop"),
+        opp(opportunity_id="NEW", opportunity_name="Brand New", stage="02 Develop"),
+    ], "w2", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    note = " ".join(flags.attrs["notes"])
+    assert "insufficient history for 1 opportunities" in note
+
+
+def test_at_risk_and_owner_distinguish_deals_sharing_a_name(db_path):
+    # Two distinct flagged deals share account+opportunity name but differ by id
+    # and owner. Name-only dedup would collapse them and undercount at-risk.
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="A1", account_name="acme", account_name_raw="Acme",
+            opportunity_name="Renewal", amount=500000.0, exec_sponsor="",
+            owner="kevin dugas"),
+        opp(opportunity_id="A2", account_name="acme", account_name_raw="Acme",
+            opportunity_name="Renewal", amount=600000.0, exec_sponsor="",
+            owner="priya sharma"),
+    ], "w1", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    assert len(flags[flags["rule"] == "no_sponsor"]) == 2
+    assert forecast.at_risk_total(flags) == pytest.approx(1_100_000.0)
+    rollup = forecast.owner_rollup(cur, db_path=db_path).set_index("owner")["at_risk"]
+    assert rollup["kevin dugas"] == pytest.approx(500000.0)
+    assert rollup["priya sharma"] == pytest.approx(600000.0)
+
+
+def test_narrative_risk_dedups_multi_rule_opp(db_path):
+    # One opportunity firing two rules must be counted and listed once, and the
+    # "plus N more" remainder must not count the duplicate rule row.
+    flags = pd.DataFrame([
+        {"rule": "stalled", "opportunity_id": "A1", "opportunity_name": "Alpha",
+         "account_name": "acme", "owner": "k", "amount": 900000.0, "evidence": "stalled"},
+        {"rule": "slipped", "opportunity_id": "A1", "opportunity_name": "Alpha",
+         "account_name": "acme", "owner": "k", "amount": 900000.0, "evidence": "slipped"},
+        {"rule": "no_sponsor", "opportunity_id": "B2", "opportunity_name": "Beta",
+         "account_name": "beta", "owner": "k", "amount": 300000.0, "evidence": "no sponsor"},
+    ], columns=forecast.FLAG_COLUMNS)
+    rollup = {"commit": 0.0, "upside": 0.0, "upside_count": 0, "late_count": 0,
+              "total_open": 0.0}
+    sections = narrative.draft(rollup, None, flags)
+    assert "2 deal(s) flagged" in sections["risk"]
+    assert sections["risk"].count("Alpha") == 1  # listed once, not per rule
+    assert "more" not in sections["risk"]         # only 2 distinct deals, both shown
+
+
+def test_narrative_unclassified_note(db_path):
+    # An open deal in an unmapped stage with no forecast_category is excluded
+    # from total_open; the narrative must say so rather than silently understate.
+    sid = make_snapshot(db_path, [
+        opp(opportunity_id="U1", stage="Mystery Stage", stage_bucket="",
+            forecast_category=None, amount=750000.0),
+    ], "w1", "2026-08-11")
+    rollup = forecast.bucket_rollup(sid, db_path=db_path)
+    assert rollup["unclassified"] == pytest.approx(750000.0)
+    assert rollup["total_open"] == 0.0
+    flags = forecast.risk_flags(sid, db_path=db_path)
+    sections = narrative.draft(rollup, None, flags)
+    assert "unmapped stages" in sections["commit"]
+
+
+def test_top_deals_ties_broken_deterministically(db_path):
+    # Equal amounts must order by account then opportunity name, not by
+    # unstable sort — same snapshot, same order every run/platform.
+    sid = make_snapshot(db_path, [
+        opp(opportunity_id="T3", account_name="cephas", opportunity_name="Z", amount=100000.0),
+        opp(opportunity_id="T1", account_name="acme", opportunity_name="Y", amount=100000.0),
+        opp(opportunity_id="T2", account_name="beta", opportunity_name="X", amount=100000.0),
+    ], "w1", "2026-08-11")
+    names = forecast.top_deals(sid, db_path=db_path)["account_name"].tolist()
+    assert names == ["acme", "beta", "cephas"]
+
+
+def test_top_deals_accepts_precomputed_flags(db_path):
+    # Reusing a precomputed flags frame must give the same result as computing
+    # it internally (the QBR page passes one in to avoid recomputing risk_flags).
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="B1", amount=600000.0, exec_sponsor=""),
+        opp(opportunity_id="B2", amount=200000.0, exec_sponsor="Jane Exec"),
+    ], "w1", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    internal = forecast.top_deals(cur, db_path=db_path)
+    reused = forecast.top_deals(cur, db_path=db_path, flags=flags)
+    assert internal["flags"].tolist() == reused["flags"].tolist()
+    assert (reused["flags"] == "no_sponsor").any()
+
+
+def test_top_deals_uses_id_aware_flag_lookup(db_path):
+    # Two distinct deals can share a name, but they must not inherit the same
+    # risk labels by account+opportunity name alone.
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="A1", account_name="acme", opportunity_name="Renewal",
+            amount=900000.0, exec_sponsor=""),
+        opp(opportunity_id="A2", account_name="acme", opportunity_name="Renewal",
+            amount=850000.0, exec_sponsor="Jane Exec"),
+    ], "w1", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    top = forecast.top_deals(cur, db_path=db_path, flags=flags)
+    assert top["flags"].tolist() == ["no_sponsor", ""]
 
 
 def test_narrative_offline_socket_guard(db_path, sample_snapshot, monkeypatch):

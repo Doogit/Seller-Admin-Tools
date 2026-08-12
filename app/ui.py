@@ -16,10 +16,6 @@ def snapshot_labels(snaps: pd.DataFrame) -> dict[int, str]:
     }
 
 
-def at_risk_total(flags: pd.DataFrame) -> float:
-    return forecast.at_risk_total(flags)
-
-
 def metric_row(rollup: dict, prior_rollup: dict | None, quota: float | None,
                at_risk: float) -> None:
     m1, m2, m3, m4 = st.columns(4)
@@ -33,6 +29,11 @@ def metric_row(rollup: dict, prior_rollup: dict | None, quota: float | None,
     m4.metric("At risk", fmt_money(at_risk))
     if rollup.get("derived"):
         st.caption("Buckets derived from stage — map forecast_category for accuracy.")
+    if rollup.get("unclassified_count"):
+        st.caption(
+            f"{fmt_money(rollup['unclassified'])} open in unmapped stages is "
+            "excluded from coverage."
+        )
 
 
 def risk_table(flags: pd.DataFrame) -> None:
@@ -41,7 +42,8 @@ def risk_table(flags: pd.DataFrame) -> None:
     if flags.empty:
         st.write("No risk flags.")
     else:
-        st.dataframe(flags, width="stretch", hide_index=True)
+        st.dataframe(flags.drop(columns=["opportunity_id"], errors="ignore"),
+                     width="stretch", hide_index=True)
 
 
 def deltas_expander(deltas: pd.DataFrame | None) -> None:
