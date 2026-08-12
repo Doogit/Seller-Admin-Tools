@@ -1,4 +1,4 @@
-"""Tool 2: ROB/QBR review package — on-screen view + .pptx/.md downloads."""
+"""Tool 2: QBR review package — on-screen view + .pptx/.md downloads."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import ui
 from core import deck, forecast, store
 
 st.set_page_config(page_title="QBR Assembler", layout="wide")
-st.title("ROB / QBR assembler")
+st.title("QBR assembler")
 
 snaps = store.list_snapshots()
 if snaps.empty:

@@ -32,6 +32,8 @@ external system.
 
 ### 0. Home — ingest & column mapping
 
+![Home — pipeline import and column mapping](docs/screenshots/0-home-mapping.png)
+
 The foundation every tool builds on. Upload any pipeline CSV; the app:
 
 1. Auto-suggests a mapping from your headers to the canonical schema (you confirm
@@ -55,6 +57,8 @@ week-over-week deltas — plus `forecast_category`, `probability`, `product`,
 
 ### 1. Forecast Narrative
 
+![Forecast Narrative — metrics, week-over-week movement, and draft narrative](docs/screenshots/1-forecast-narrative.png)
+
 Drafts the weekly commit / upside / risk story from a snapshot:
 
 - **Bucket rollup** — commit/upside/pipeline totals, using `forecast_category`
@@ -73,6 +77,8 @@ The numbers are inserted verbatim; the editable prose stays under your control.
 Export by copy or `.md` download.
 
 ### 2. QBR Assembler
+
+![QBR Assembler — scorecard and native pipeline-by-stage chart](docs/screenshots/2-qbr-assembler.png)
 
 One click from a snapshot to a five-slide `.pptx` (title, scorecard, pipeline-by-
 stage native bar chart, top deals, risks & asks) plus a `.md` appendix. Tables
@@ -106,6 +112,8 @@ share `core/forecast`, so they cannot drift.
 </details>
 
 ### 3. Account Plan
+
+![Account Plan — obligation to capability to gap crosswalk with whitespace](docs/screenshots/3-account-plan.png)
 
 Joins an account-facts record (installed products, incumbent tools, regulatory
 scope, spend) with that account's open pipeline to produce a plan with:
@@ -163,9 +171,9 @@ Then walk the pages in order: **Home** (the sample import is already seeded, or
 upload `sample_data/energy_pipeline_sample.csv` yourself) → **Forecast Narrative**
 → **QBR Assembler** → **Account Plan**.
 
-> **Screenshots:** the tools are a live Streamlit UI — run the commands above to
-> see them. The `<details>` blocks above show real, reproducible export output
-> from the bundled sample data.
+> The screenshots above are the live Streamlit UI running against the bundled
+> sample data, and the `<details>` blocks show real, reproducible export output.
+> Run the commands above to reproduce either.
 
 ## Sample data
 

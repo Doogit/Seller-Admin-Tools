@@ -1,5 +1,5 @@
 ---
-title: "Tool 2 — ROB/QBR deck assembler"
+title: "Tool 2 — QBR deck assembler"
 project: sales-admin-agents
 session: 3 of 4
 stack: Python, SQLite, Streamlit, python-pptx (inherits foundation)
@@ -13,7 +13,7 @@ rationale: >
   iterative MVP principle.
 ---
 
-# Implementation: ROB/QBR deck assembler
+# Implementation: QBR deck assembler
 
 ## Constraints
 - Branch required: yes — `feat/qbr-assembler`
