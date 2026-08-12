@@ -42,8 +42,10 @@ def test_full_risk_and_movement_tables(db_path):
     # risk table present, opportunity_id column dropped, amount money-formatted
     assert v.risk["empty_text"] is None
     assert "opportunity_id" not in v.risk["columns"]
+    # 'action' relabelled to 'suggested ask' (the coaching ask); id dropped
     assert v.risk["columns"] == [
-        "rule", "opportunity_name", "account_name", "owner", "amount", "evidence"
+        "rule", "opportunity_name", "account_name", "owner", "amount", "evidence",
+        "suggested ask",
     ]
     assert v.risk["rows"] and all(
         r["amount"].startswith("$") for r in v.risk["rows"] if r["amount"]
@@ -51,6 +53,16 @@ def test_full_risk_and_movement_tables(db_path):
     # movement detail present with the pinned delta columns
     assert v.movement["columns"] == forecast.DELTA_COLUMNS
     assert v.movement["rows"]
+
+
+def test_full_challenge_list(db_path):
+    sc = fx.build_full(db_path)
+    v = vm.build(sc.current_id, sc.prior_id, sc.quota, db_path=db_path)
+    # largest open deals, amount money-formatted, risk-flag names joined
+    assert v.challenge["rows"]
+    assert v.challenge["columns"][:4] == ["opportunity_name", "account_name", "stage", "amount"]
+    assert "flags" in v.challenge["columns"]
+    assert all(r["amount"].startswith("$") for r in v.challenge["rows"] if r["amount"])
 
 
 def test_full_draft_matches_generator_and_period(db_path):

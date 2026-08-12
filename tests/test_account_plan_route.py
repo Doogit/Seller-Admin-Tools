@@ -40,7 +40,9 @@ def env(tmp_path, monkeypatch):
 
 @pytest.fixture
 def client():
-    return TestClient(app, base_url=LOCAL)
+    # loopback Host + same-origin Origin so POSTs clear LocalOnlyMiddleware
+    # (its default TestClient host/origin would 403 on state-changing requests).
+    return TestClient(app, base_url=LOCAL, headers={"Origin": LOCAL})
 
 
 def _seed(db):

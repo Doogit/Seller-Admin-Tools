@@ -48,7 +48,7 @@
     ],
     [
       "Risks & asks",
-      "• Fresh Delta ($1.5M): $1.5M closing 2026-08-20 but stage is '01 Qualify' (bucket: early)\n• Fresh Delta ($1.5M): no exec sponsor on a $1.5M deal\n• Renewal Alpha ($900K): in stage '02 Develop' for 45 days (since 2026-06-27)\n• Expansion Beta ($750K): no exec sponsor on a $750K deal",
+      "• Fresh Delta ($1.5M): $1.5M closing 2026-08-20 but stage is '01 Qualify' (bucket: early; flags at $1.0M within 30d)\n• Fresh Delta ($1.5M): no exec sponsor on a $1.5M deal (flags at $500K)\n• Renewal Alpha ($900K): in stage '02 Develop' for 45 days (since 2026-06-27; flags at 45)\n• Expansion Beta ($750K): no exec sponsor on a $750K deal (flags at $500K)",
       "Asks\n(fill in — this section stays human)",
       "DRAFT — generated locally; review before presenting"
     ]

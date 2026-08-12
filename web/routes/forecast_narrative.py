@@ -136,6 +136,18 @@ def _draft(v: vm.ForecastView):
     return Div(*_draft_inner(v), id="draft")
 
 
+def _challenge(v: vm.ForecastView):
+    c = v.challenge
+    return Div(
+        H2("Largest open deals (challenge list)",
+           cls="mt-6 text-base font-semibold text-slate-900"),
+        P("Top open deals by amount — the commit/upside deals to pressure-test on "
+          "the call. The flags column shows which already tripped a risk rule.",
+          cls="text-xs text-slate-500"),
+        Div(data_table(c["columns"], c["rows"]), cls="mt-2"),
+    )
+
+
 def _risk(v: vm.ForecastView):
     r = v.risk
     return Div(
@@ -165,7 +177,7 @@ def _footer():
 def _body(v: vm.ForecastView):
     return Div(
         _controls(v), Div(_metrics(v), cls="mt-4"), Div(_draft(v), cls="mt-6"),
-        _risk(v), _movement(v), _footer(),
+        _challenge(v), _risk(v), _movement(v), _footer(),
         id="tool-body",
     )
 

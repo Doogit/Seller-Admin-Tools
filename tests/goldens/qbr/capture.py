@@ -29,7 +29,8 @@ from core.views import qbr as vm  # noqa: E402
 
 
 def view_struct(v) -> dict:
-    return {"metrics": v.metrics, "stage": v.stage, "sub_vertical": v.sub_vertical,
+    return {"metrics": v.metrics, "credibility": v.credibility, "trend": v.trend,
+            "stage": v.stage, "sub_vertical": v.sub_vertical, "owner": v.owner,
             "top": v.top, "risk": v.risk}
 
 

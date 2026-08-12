@@ -9,6 +9,32 @@
     "derived_note": "Buckets derived from stage — map forecast_category for accuracy.",
     "unclassified_note": "$750K open in unmapped stages is excluded from coverage."
   },
+  "credibility": "Forecast credibility: none of last week's 1 commit deal(s) have resolved yet (0 still open, 1 no longer present).",
+  "trend": {
+    "columns": [
+      "as_of_date",
+      "label",
+      "commit",
+      "upside",
+      "at_risk"
+    ],
+    "rows": [
+      {
+        "as_of_date": "2026-06-27",
+        "label": "wk31",
+        "commit": "$300K",
+        "upside": "$1.4M",
+        "at_risk": "$500K"
+      },
+      {
+        "as_of_date": "2026-08-11",
+        "label": "wk32",
+        "commit": "$750K",
+        "upside": "$900K",
+        "at_risk": "$3.1M"
+      }
+    ]
+  },
   "stage": {
     "bars": [
       {
@@ -39,6 +65,35 @@
     "empty": false
   },
   "sub_vertical": null,
+  "owner": {
+    "columns": [
+      "owner",
+      "commit",
+      "upside",
+      "pipeline",
+      "deals",
+      "at_risk"
+    ],
+    "rows": [
+      {
+        "owner": "priya sharma",
+        "commit": "$750K",
+        "upside": "$0",
+        "pipeline": "$0",
+        "deals": 2,
+        "at_risk": "$750K"
+      },
+      {
+        "owner": "kevin dugas",
+        "commit": "$0",
+        "upside": "$900K",
+        "pipeline": "$1.5M",
+        "deals": 2,
+        "at_risk": "$2.4M"
+      }
+    ],
+    "empty_text": null
+  },
   "top": {
     "columns": [
       "opportunity_name",
@@ -96,7 +151,8 @@
       "account_name",
       "owner",
       "amount",
-      "evidence"
+      "evidence",
+      "suggested ask"
     ],
     "rows": [
       {
@@ -105,7 +161,8 @@
         "account_name": "acme power",
         "owner": "kevin dugas",
         "amount": "$900K",
-        "evidence": "in stage '02 Develop' for 45 days (since 2026-06-27)"
+        "evidence": "in stage '02 Develop' for 45 days (since 2026-06-27; flags at 45)",
+        "suggested ask": "Ask the rep for the specific next step and a date to advance the stage."
       },
       {
         "rule": "no_sponsor",
@@ -113,7 +170,8 @@
         "account_name": "acme power",
         "owner": "priya sharma",
         "amount": "$750K",
-        "evidence": "no exec sponsor on a $750K deal"
+        "evidence": "no exec sponsor on a $750K deal (flags at $500K)",
+        "suggested ask": "Name the exec sponsor and the plan to engage them this week."
       },
       {
         "rule": "no_sponsor",
@@ -121,7 +179,8 @@
         "account_name": "acme power",
         "owner": "kevin dugas",
         "amount": "$1.5M",
-        "evidence": "no exec sponsor on a $1.5M deal"
+        "evidence": "no exec sponsor on a $1.5M deal (flags at $500K)",
+        "suggested ask": "Name the exec sponsor and the plan to engage them this week."
       },
       {
         "rule": "big_and_late",
@@ -129,7 +188,8 @@
         "account_name": "acme power",
         "owner": "kevin dugas",
         "amount": "$1.5M",
-        "evidence": "$1.5M closing 2026-08-20 but stage is '01 Qualify' (bucket: early)"
+        "evidence": "$1.5M closing 2026-08-20 but stage is '01 Qualify' (bucket: early; flags at $1.0M within 30d)",
+        "suggested ask": "Pressure-test the close date against the current stage — is this really landing this month?"
       }
     ],
     "empty_text": null

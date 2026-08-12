@@ -43,6 +43,7 @@ class ForecastView:
     metrics: dict
     unmatched: dict
     draft: dict
+    challenge: dict
     risk: dict
     movement: dict
     period: str
@@ -63,6 +64,14 @@ def _movement(deltas: pd.DataFrame | None) -> dict:
     if deltas is None or deltas.empty:
         return {"columns": [], "rows": []}
     return {"columns": list(deltas.columns), "rows": common.table_rows(deltas)}
+
+
+def _challenge(top: pd.DataFrame) -> dict:
+    """Largest open deals (the commit/upside deals to pressure-test), with the
+    risk-flag names joined — core's forecast.top_deals(flags=...)."""
+    if top is None or top.empty:
+        return {"columns": [], "rows": []}
+    return {"columns": list(top.columns), "rows": common.table_rows(top)}
 
 
 # --- public API --------------------------------------------------------------
@@ -125,6 +134,7 @@ def build(current_id: int, prior_id: int | None, quota: float | None,
                                     forecast.at_risk_total(flags)),
         unmatched=_unmatched(deltas),
         draft=sections,
+        challenge=_challenge(forecast.top_deals(current_id, db_path=db_path, flags=flags)),
         risk=common.risk_block(flags),
         movement=_movement(deltas),
         period=period_for(current_id, db_path=db_path),

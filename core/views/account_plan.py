@@ -27,6 +27,10 @@ NO_OBLIGATIONS = ("No obligations in scope — set regulatory_scope in the accou
                   "facts to drive the crosswalk.")
 NO_NEAR_NAMES = "No near-name pipeline accounts found."
 NO_PIPELINE_SNAPSHOTS = "No pipeline snapshots — plan will render without pipeline."
+UNMEASURABLE_WHITESPACE = (
+    "No `product` field populated on this account's open pipeline — whitespace "
+    "can't be measured (shown as $0, not a true zero). Map the product column on "
+    "Home to enable it.")
 REQUIRED_NOT_MAPPED = "Required fields not mapped: "
 FOOTER = "Draft — review before use. Read-only: nothing is sent anywhere."
 
@@ -144,6 +148,7 @@ class AccountPlanView:
     account_display: str
     summary: list[str]
     metrics: dict
+    unmeasurable: bool
     gaps: dict
     uncovered: dict
     unresolved: dict
@@ -228,6 +233,7 @@ def build(account_name: str, snapshot_id: int | None, db_path=None) -> AccountPl
             "uncovered": len(ws["uncovered"]),
             "obligations": len(gaps),
         },
+        unmeasurable=bool(ws.get("unmeasurable")),
         gaps=_gaps_block(gaps),
         uncovered={"rows": common.table_rows(ws["uncovered"])},
         unresolved={"products": ws["unresolved_products"],

@@ -28,13 +28,21 @@
 | Identity Consolidation | gulfstream petroleum | 03 Propose | $750K | 2026-09-18 |
 | TSA Directive Gap Closure | transcanyon pipelines | 02 Develop | $690K | 2026-11-20 |
 
+## By seller
+| Owner | Commit | Upside | Pipeline | Deals | At risk |
+|---|---|---|---|---|---|
+| marcus webb | $3.9M | $2.1M | $1.6M | 11 | $750K |
+| kevin dugas | $2.2M | $640K | $825K | 7 | $0 |
+| elena rodriguez | $2.1M | $2.6M | $835K | 10 | $0 |
+| priya sharma | $525K | $1.0M | $1.6M | 11 | $0 |
+
 ## Sub-vertical split
 - Power & Utilities: 22 deals, $8.5M
 - Oil & Gas: 11 deals, $6.4M
 - Pipelines: 6 deals, $5.0M
 
 ## Risks & asks
-- Identity Consolidation ($750K): no exec sponsor on a $750K deal
+- Identity Consolidation ($750K): no exec sponsor on a $750K deal (flags at $500K)
 - Asks: (fill in — this section stays human)
 
 *DRAFT — generated locally; review before presenting*

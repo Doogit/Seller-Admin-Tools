@@ -9,6 +9,8 @@
     "derived_note": "Buckets derived from stage — map forecast_category for accuracy.",
     "unclassified_note": null
   },
+  "credibility": null,
+  "trend": null,
   "stage": {
     "bars": [
       {
@@ -61,6 +63,51 @@
         "amount": "$5.0M"
       }
     ]
+  },
+  "owner": {
+    "columns": [
+      "owner",
+      "commit",
+      "upside",
+      "pipeline",
+      "deals",
+      "at_risk"
+    ],
+    "rows": [
+      {
+        "owner": "marcus webb",
+        "commit": "$3.9M",
+        "upside": "$2.1M",
+        "pipeline": "$1.6M",
+        "deals": 11,
+        "at_risk": "$750K"
+      },
+      {
+        "owner": "kevin dugas",
+        "commit": "$2.2M",
+        "upside": "$640K",
+        "pipeline": "$825K",
+        "deals": 7,
+        "at_risk": "$0"
+      },
+      {
+        "owner": "elena rodriguez",
+        "commit": "$2.1M",
+        "upside": "$2.6M",
+        "pipeline": "$835K",
+        "deals": 10,
+        "at_risk": "$0"
+      },
+      {
+        "owner": "priya sharma",
+        "commit": "$525K",
+        "upside": "$1.0M",
+        "pipeline": "$1.6M",
+        "deals": 11,
+        "at_risk": "$0"
+      }
+    ],
+    "empty_text": null
   },
   "top": {
     "columns": [
@@ -175,7 +222,8 @@
       "account_name",
       "owner",
       "amount",
-      "evidence"
+      "evidence",
+      "suggested ask"
     ],
     "rows": [
       {
@@ -184,7 +232,8 @@
         "account_name": "gulfstream petroleum",
         "owner": "marcus webb",
         "amount": "$750K",
-        "evidence": "no exec sponsor on a $750K deal"
+        "evidence": "no exec sponsor on a $750K deal (flags at $500K)",
+        "suggested ask": "Name the exec sponsor and the plan to engage them this week."
       }
     ],
     "empty_text": null

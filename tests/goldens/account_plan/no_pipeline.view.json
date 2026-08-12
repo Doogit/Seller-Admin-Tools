@@ -12,6 +12,7 @@
     "uncovered": 5,
     "obligations": 8
   },
+  "unmeasurable": false,
   "gaps": {
     "columns": [
       "obligation_id",

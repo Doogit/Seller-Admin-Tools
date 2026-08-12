@@ -85,6 +85,9 @@ def risk_block(flags: pd.DataFrame) -> dict:
     notes = [f"Note: {n}" for n in (flags.attrs.get("notes", []) if flags is not None else [])]
     if flags is None or flags.empty:
         return {"notes": notes, "columns": [], "rows": [], "empty_text": NO_RISK_FLAGS}
-    table = flags.drop(columns=["opportunity_id"], errors="ignore")
+    # 'action' is the suggested coaching ask (risk_rules.yaml) — relabel it for
+    # display, matching app/ui.py's column_config("action" -> "suggested ask").
+    table = (flags.drop(columns=["opportunity_id"], errors="ignore")
+             .rename(columns={"action": "suggested ask"}))
     return {"notes": notes, "columns": list(table.columns),
             "rows": table_rows(table), "empty_text": None}

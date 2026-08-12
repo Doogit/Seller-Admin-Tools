@@ -25,6 +25,7 @@ from fasthtml.common import (  # noqa: E402
 
 from web.components import landing  # noqa: E402
 from web.routes import account_plan, forecast_narrative, qbr  # noqa: E402
+from web.security import LocalOnlyMiddleware  # noqa: E402
 
 STATIC_DIR = REPO_ROOT / "web" / "static"
 
@@ -48,6 +49,11 @@ for _h in app.hdrs:
     if _EXTERNAL.search(_xml):
         raise RuntimeError(f"External header URL detected (offline invariant broken): {_xml}")
 
+# Local-only guard: reject any request whose Host isn't loopback, and any
+# state-changing request that isn't same-origin (CSRF-to-localhost / DNS
+# rebinding). See web/security.py.
+app.add_middleware(LocalOnlyMiddleware)
+
 
 @rt("/")
 def index():
@@ -60,4 +66,6 @@ account_plan.register(rt)
 
 
 if __name__ == "__main__":
-    serve()
+    # Bind to loopback only (uvicorn/serve default is 0.0.0.0); this is a
+    # single-user local tool with no auth.
+    serve(host="127.0.0.1")

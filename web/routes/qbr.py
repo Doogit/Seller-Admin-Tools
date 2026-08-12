@@ -109,14 +109,42 @@ def _sub_vertical(v: vm.QbrView):
     )
 
 
+def _credibility(v: vm.QbrView):
+    if not v.credibility:
+        return ""
+    return P(v.credibility, cls="mt-2 text-xs text-slate-500")
+
+
+def _trend(v: vm.QbrView):
+    if v.trend is None:
+        return ""
+    return Div(
+        H2("Trend (through this snapshot)",
+           cls="mt-6 text-base font-semibold text-slate-900"),
+        Div(data_table(v.trend["columns"], v.trend["rows"]), cls="mt-2"),
+        P(vm.TREND_CAPTION, cls="mt-1 text-xs text-slate-500"),
+    )
+
+
+def _owner(v: vm.QbrView):
+    return Div(
+        H2("By seller", cls="mt-6 text-base font-semibold text-slate-900"),
+        Div(data_table(v.owner["columns"], v.owner["rows"], v.owner["empty_text"]),
+            cls="mt-2"),
+    )
+
+
 def _data(v: vm.QbrView):
     return Div(
         Div(metric_cards(v.metrics),
             P(vm.NUMBERS_IDENTICAL, cls="mt-2 text-xs text-slate-500"),
+            _credibility(v),
             cls="mt-4"),
+        _trend(v),
         H2("Pipeline by stage", cls="mt-6 text-base font-semibold text-slate-900"),
         Div(_chart(v), cls="mt-2"),
         _sub_vertical(v),
+        _owner(v),
         H2("Top deals", cls="mt-6 text-base font-semibold text-slate-900"),
         Div(data_table(v.top["columns"], v.top["rows"]), cls="mt-2"),
         H2("Risks", cls="mt-6 text-base font-semibold text-slate-900"),

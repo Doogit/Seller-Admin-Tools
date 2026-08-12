@@ -38,6 +38,27 @@ def test_prior_scenario_arrows_coverage_and_no_subvertical(db_path):
     assert v.sub_vertical is None                        # -> route shows SUBVERTICAL_UNAVAILABLE
 
 
+def test_prior_credibility_trend_owner(db_path):
+    sc = qfx.build_prior(db_path)
+    v = vm.build(sc.current_id, sc.prior_id, sc.period, sc.team, sc.quota, db_path=db_path)
+    # prior present -> forecast-credibility line; >=2 snapshots -> trend table
+    assert v.credibility is not None
+    assert v.trend is not None and v.trend["rows"]
+    assert {"commit", "upside", "at_risk"} <= set(v.trend["columns"])
+    # per-seller rollup, money-formatted
+    assert v.owner["rows"] and v.owner["empty_text"] is None
+    assert {"owner", "commit", "upside", "pipeline", "at_risk"} <= set(v.owner["columns"])
+    assert all(r["commit"].startswith("$") for r in v.owner["rows"])
+
+
+def test_sample_single_snapshot_no_credibility_or_trend(db_path):
+    sc = qfx.build_sample(db_path)  # no prior, single snapshot
+    v = vm.build(sc.current_id, sc.prior_id, sc.period, sc.team, sc.quota, db_path=db_path)
+    assert v.credibility is None   # no prior commit to judge
+    assert v.trend is None          # <2 snapshots
+    assert v.owner["rows"]          # owners still roll up
+
+
 def test_empty_snapshot(db_path):
     sc = qfx.build_empty(db_path)
     v = vm.build(sc.current_id, sc.prior_id, sc.period, sc.team, sc.quota, db_path=db_path)

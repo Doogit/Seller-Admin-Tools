@@ -220,6 +220,8 @@ def _plan(v: vm.AccountPlanView, account_name: str, snapshot_id):
             _metric(vm.METRIC_UNCOVERED, v.metrics["uncovered"]),
             _metric(vm.METRIC_OBLIGATIONS, v.metrics["obligations"]),
             cls="mt-4 grid gap-3 sm:grid-cols-3"),
+        (P(vm.UNMEASURABLE_WHITESPACE, cls="mt-2 text-xs text-slate-500")
+         if v.unmeasurable else ""),
         *warnings,
         Div(H2("Obligation → capability → gap", cls=f"mt-6 {_H2}"),
             data_table(v.gaps["columns"], v.gaps["rows"], v.gaps["empty_text"])),

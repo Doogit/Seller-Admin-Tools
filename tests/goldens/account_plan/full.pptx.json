@@ -53,7 +53,7 @@
     ],
     [
       "Next actions",
-      "• Pursue open pipeline: ot_security (Defender for OT)\n• Expand / renew: Entra landed (identity)\n• New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet\n• Displacement play: displace CrowdStrike with Defender for Endpoint (endpoint_protection)\n• Expand / renew: Sentinel landed (siem)\n• Pursue open pipeline: data_protection (Purview)\n• (fill in — relationship map stays human)",
+      "• Pursue open pipeline: ot_security (Defender for OT) — $640K in open pipeline maps to this gap\n• Expand / renew: Entra landed (identity)\n• New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet\n• Displacement play: displace CrowdStrike with Defender for Endpoint (endpoint_protection)\n• Expand / renew: Sentinel landed (siem)\n• Pursue open pipeline: data_protection (Purview) — $180K in open pipeline maps to this gap\n• (fill in — relationship map stays human)",
       "DRAFT — generated locally; review before presenting"
     ]
   ]

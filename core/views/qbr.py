@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pandas as pd
+
 from core import deck, store
 from core.views import common
 from core.views.common import (  # re-exported for the route
@@ -23,6 +25,8 @@ SUBVERTICAL_UNAVAILABLE = (
     "Sub-vertical split unavailable — field not mapped in this snapshot.")
 FOOTER = "Draft — review before presenting. Read-only: nothing is sent anywhere."
 DEFAULT_TEAM = "Energy Team"
+OWNER_EMPTY = "No open pipeline by owner."
+TREND_CAPTION = "Commit / upside / at-risk across weekly snapshots up to the selected one."
 
 OPEN_EXCLUDE = ("closed_won", "closed_lost")
 
@@ -37,8 +41,11 @@ class QbrView:
     team: str
     quota: float | None
     metrics: dict
+    credibility: str | None
+    trend: dict | None
     stage: dict
     sub_vertical: dict | None
+    owner: dict
     top: dict
     risk: dict
     safe_period: str
@@ -86,6 +93,39 @@ def _top(data: dict) -> dict:
     return {"columns": list(top.columns), "rows": common.table_rows(top)}
 
 
+def _money_rows(df, money_cols: tuple[str, ...]) -> list[dict]:
+    """Records with the named columns money-formatted (tables are out of byte-
+    parity scope; the values still trace to core.forecast)."""
+    out = []
+    for rec in df.to_dict("records"):
+        row = {k: ("" if pd.isna(v) else v) for k, v in rec.items()}
+        for c in money_cols:
+            if c in rec:
+                row[c] = common.money_cell(rec[c])
+        out.append(row)
+    return out
+
+
+def _owner(data: dict) -> dict:
+    """Per-seller commit/upside/pipeline/at-risk (forecast.owner_rollup)."""
+    o = data["owner_rollup"]
+    if o is None or o.empty:
+        return {"columns": [], "rows": [], "empty_text": OWNER_EMPTY}
+    return {"columns": list(o.columns),
+            "rows": _money_rows(o, ("commit", "upside", "pipeline", "at_risk")),
+            "empty_text": None}
+
+
+def _trend(data: dict) -> dict | None:
+    """Multi-week commit/upside/at-risk trend — shown only with >=2 snapshots
+    (matches the page's `len(trend) >= 2` guard)."""
+    t = data["trend"]
+    if t is None or len(t) < 2:
+        return None
+    return {"columns": list(t.columns),
+            "rows": _money_rows(t, ("commit", "upside", "at_risk"))}
+
+
 def build(current_id: int, prior_id: int | None, period: str, team: str,
           quota: float | None, db_path=None) -> QbrView:
     meta = {"period": period, "team": team, "quota": quota or None}
@@ -102,8 +142,11 @@ def build(current_id: int, prior_id: int | None, period: str, team: str,
         quota=quota,
         metrics=common.metric_block(data["rollup"], data["prior_rollup"], quota,
                                     data["at_risk"]),
+        credibility=deck.credibility_summary(data["commit_conversion"]),
+        trend=_trend(data),
         stage=_stage(data),
         sub_vertical=_sub_vertical(data),
+        owner=_owner(data),
         top=_top(data),
         risk=common.risk_block(data["flags"]),
         safe_period=safe_period(period),

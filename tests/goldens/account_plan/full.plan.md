@@ -40,12 +40,12 @@
   - CIP-010-4-R3: patch_mgmt (Defender Vulnerability Management)
 
 ## Next actions
-- Pursue open pipeline: ot_security (Defender for OT)
+- Pursue open pipeline: ot_security (Defender for OT) — $640K in open pipeline maps to this gap
 - Expand / renew: Entra landed (identity)
 - New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet
 - Displacement play: displace CrowdStrike with Defender for Endpoint (endpoint_protection)
 - Expand / renew: Sentinel landed (siem)
-- Pursue open pipeline: data_protection (Purview)
+- Pursue open pipeline: data_protection (Purview) — $180K in open pipeline maps to this gap
 
 ## Relationship map
 (fill in — relationship map stays human)

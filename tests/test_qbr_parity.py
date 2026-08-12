@@ -54,7 +54,8 @@ def test_view_struct_matches(key, tmp_path):
     db = tmp_path / f"{key}.db"
     sc = qfx.BUILDERS[key](db)
     v = vm.build(sc.current_id, sc.prior_id, sc.period, sc.team, sc.quota, db_path=db)
-    got = {"metrics": v.metrics, "stage": v.stage, "sub_vertical": v.sub_vertical,
+    got = {"metrics": v.metrics, "credibility": v.credibility, "trend": v.trend,
+           "stage": v.stage, "sub_vertical": v.sub_vertical, "owner": v.owner,
            "top": v.top, "risk": v.risk}
     golden = json.loads((GOLDEN_DIR / f"{key}.view.json").read_text(encoding="utf-8"))
     assert got == golden, f"{key}: view struct drifted from golden"

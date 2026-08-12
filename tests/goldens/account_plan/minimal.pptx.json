@@ -65,7 +65,7 @@
     ],
     [
       "Next actions",
-      "• Pursue open pipeline: ot_security (Defender for OT)\n• Pursue open pipeline: identity (Entra)\n• New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet\n• New capability play: endpoint_protection (Defender for Endpoint) — no pipeline exists yet\n• Pursue open pipeline: siem (Sentinel)\n• New capability play: data_protection (Purview) — no pipeline exists yet\n• (fill in — relationship map stays human)",
+      "• Pursue open pipeline: ot_security (Defender for OT) — $525K in open pipeline maps to this gap\n• Pursue open pipeline: identity (Entra) — $72K in open pipeline maps to this gap\n• New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet\n• New capability play: endpoint_protection (Defender for Endpoint) — no pipeline exists yet\n• Pursue open pipeline: siem (Sentinel) — $480K in open pipeline maps to this gap\n• New capability play: data_protection (Purview) — no pipeline exists yet\n• (fill in — relationship map stays human)",
       "DRAFT — generated locally; review before presenting"
     ]
   ]

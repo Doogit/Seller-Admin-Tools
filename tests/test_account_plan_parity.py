@@ -59,7 +59,8 @@ def test_view_struct_matches(key, tmp_path):
     sc = afx.BUILDERS[key](db)
     v = vm.build(sc.account_name, sc.snapshot_id, db_path=db)
     got = {"account_display": v.account_display, "summary": v.summary,
-           "metrics": v.metrics, "gaps": v.gaps, "uncovered": v.uncovered,
+           "metrics": v.metrics, "unmeasurable": v.unmeasurable,
+           "gaps": v.gaps, "uncovered": v.uncovered,
            "unresolved": v.unresolved, "pipeline": v.pipeline,
            "next_actions": v.next_actions, "relationship_map": v.relationship_map,
            "warnings": v.warnings, "zero_match": v.zero_match,

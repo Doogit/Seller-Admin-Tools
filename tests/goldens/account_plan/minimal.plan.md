@@ -45,11 +45,11 @@
   - IEC-62443-3-3-SR3: endpoint_protection (Defender for Endpoint)
 
 ## Next actions
-- Pursue open pipeline: ot_security (Defender for OT)
-- Pursue open pipeline: identity (Entra)
+- Pursue open pipeline: ot_security (Defender for OT) — $525K in open pipeline maps to this gap
+- Pursue open pipeline: identity (Entra) — $72K in open pipeline maps to this gap
 - New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet
 - New capability play: endpoint_protection (Defender for Endpoint) — no pipeline exists yet
-- Pursue open pipeline: siem (Sentinel)
+- Pursue open pipeline: siem (Sentinel) — $480K in open pipeline maps to this gap
 - New capability play: data_protection (Purview) — no pipeline exists yet
 
 ## Relationship map

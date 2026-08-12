@@ -27,6 +27,14 @@ def test_full_scenario_plan(db_path):
     assert v.safe_name == "meridian_energy"
 
 
+def test_unmeasurable_whitespace_field(db_path):
+    sc = afx.build_full(db_path)
+    v = vm.build(sc.account_name, sc.snapshot_id, db_path=db_path)
+    # the sample pipeline carries products -> whitespace IS measurable
+    assert v.unmeasurable is False
+    assert vm.UNMEASURABLE_WHITESPACE.startswith("No `product`")
+
+
 def test_no_pipeline_scenario(db_path):
     sc = afx.build_no_pipeline(db_path)
     v = vm.build(sc.account_name, sc.snapshot_id, db_path=db_path)
