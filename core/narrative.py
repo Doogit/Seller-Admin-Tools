@@ -11,6 +11,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from core import forecast
 from core.formatting import fmt_money
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -56,6 +57,10 @@ def draft(
         )
     if rollup.get("derived"):
         commit += ct["derived_note"]
+    if rollup.get("unclassified_count"):
+        commit += ct["unclassified_note"].format(
+            amount=fmt_money(rollup["unclassified"]), n=rollup["unclassified_count"]
+        )
 
     # Upside
     ut = t["upside"]
@@ -66,7 +71,8 @@ def draft(
     if deltas is not None and not deltas.empty:
         movers = (
             deltas[deltas["change_type"].isin(MOVEMENT_TYPES)]
-            .sort_values("amount", ascending=False)
+            .sort_values(["amount", "account_name", "opportunity_name"],
+                         ascending=[False, True, True])
             .drop_duplicates(subset=["opportunity_name", "account_name"])
             .head(2)
         )
@@ -85,19 +91,21 @@ def draft(
     if flags is None or flags.empty:
         risk = rt["none"]
     else:
-        unique = flags.drop_duplicates(subset=["opportunity_name", "account_name"])
+        unique = forecast.dedup_flags(flags)
         at_risk = float(unique["amount"].fillna(0).sum())
         risk = rt["base"].format(
             flag_count=len(unique), at_risk=fmt_money(at_risk)
         )
-        top = flags.sort_values("amount", ascending=False).head(3)
+        top = unique.sort_values(
+            ["amount", "account_name", "opportunity_name"], ascending=[False, True, True]
+        ).head(3)
         for _, f in top.iterrows():
             risk += rt["item"].format(
                 name=f["opportunity_name"],
                 amount=fmt_money(f["amount"]) if pd.notna(f["amount"]) else "$0",
                 evidence=f["evidence"],
             )
-        remainder = len(flags) - len(top)
+        remainder = len(unique) - len(top)
         if remainder > 0:
             risk += rt["more"].format(n=remainder)
 
