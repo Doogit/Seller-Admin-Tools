@@ -15,7 +15,7 @@ stages:
   commit: late
   closed won: closed_won
   closed lost: closed_lost
-  # MCEM-style labels (examples)
+  # Numbered enterprise-stage labels (examples)
   01 inspire: early
   02 design: mid
   03 empower: mid

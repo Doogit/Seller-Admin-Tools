@@ -1,5 +1,5 @@
-"""Tool 3: account plan generator — facts + pipeline -> MCEM plan with
-obligation/capability/gap crosswalk and whitespace estimate."""
+"""Tool 3: account plan generator — facts + pipeline -> structured account plan
+with obligation/capability/gap crosswalk and whitespace estimate."""
 
 from __future__ import annotations
 
@@ -170,7 +170,7 @@ if account_pipeline is not None and not account_pipeline.empty:
     st.subheader("Open pipeline for account")
     st.dataframe(sections["pipeline"], width="stretch", hide_index=True)
 
-st.subheader("MCEM next actions")
+st.subheader("Next actions")
 for a in sections["next_actions"]:
     st.write(f"- {a}")
 st.caption(sections["relationship_map"])

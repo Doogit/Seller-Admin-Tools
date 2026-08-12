@@ -10,7 +10,7 @@ rationale: >
   every cycle. Differentiator vs. generic plan tools: the obligation → capability →
   gap crosswalk (NERC CIP / TSA SD → security product families) generated from a
   maintained reference table. Crosswalk reference data is generic-capability-labeled
-  and user-editable YAML — vendor-neutral core, Microsoft labels are just the
+  and user-editable YAML — vendor-neutral core, vendor labels are just the
   shipped default config.
 ---
 
@@ -23,7 +23,7 @@ rationale: >
 - Read-only, local-only, fictional sample data only.
 
 ## Objective
-Streamlit page: upload/select account facts, join with pipeline snapshot for that account, generate an MCEM-structured account plan on screen with an obligation → capability → gap table, export .md and .pptx. Done = plan for a sample utility account generates in one click and the gap table drives a whitespace dollar estimate.
+Streamlit page: upload/select account facts, join with pipeline snapshot for that account, generate an structured account plan on screen with an obligation → capability → gap table, export .md and .pptx. Done = plan for a sample utility account generates in one click and the gap table drives a whitespace dollar estimate.
 
 ## Context
 Load in order:
@@ -45,7 +45,7 @@ Make schema.py expose `PIPELINE_SCHEMA` and `ACCOUNT_SCHEMA` objects; mapping.py
 
 ## Task 2: crosswalk data + engine
 ### 2A: config/obligation_map.yaml
-Structure per entry: obligation_id (e.g. CIP-007-6), framework, one-line paraphrase, capability_category (generic: endpoint_protection, siem, identity, ot_security, data_protection, patch_mgmt), default_product_label (shipped default: Microsoft family names — Defender for Cloud, Sentinel, Entra, Defender for OT, Purview; editable). Ship ~15 entries covering CIP-005/007/010/011, TSA Security Directive Pipeline-2021-02F (use the full directive ID in the data — practitioners will notice shorthand), IEC 62443 top-level. Mark file header: "Reference data — verify against current standard text before customer use."
+Structure per entry: obligation_id (e.g. CIP-007-6), framework, one-line paraphrase, capability_category (generic: endpoint_protection, siem, identity, ot_security, data_protection, patch_mgmt), default_product_label (shipped default: example vendor product names — Defender for Cloud, Sentinel, Entra, Defender for OT, Purview; editable). Ship ~15 entries covering CIP-005/007/010/011, TSA Security Directive Pipeline-2021-02F (use the full directive ID in the data — practitioners will notice shorthand), IEC 62443 top-level. Mark file header: "Reference data — verify against current standard text before customer use."
 
 ### 2B: config/product_map.yaml
 Free-text → capability_category resolver. Two sections: `products` (pipeline `product` values and install_base entries → category; ship aliases for common labels, e.g. "sentinel", "siem", "microsoft sentinel" → siem) and `incumbents` (competitor tool names → category, e.g. "splunk" → siem). Matching: case-insensitive substring against alias lists; unresolved values collect into an `unmapped` list surfaced in the UI with a one-click "assign category" control that appends to the YAML. Without this file the whitespace math and partial-status detection cannot work — pipeline products and crosswalk categories otherwise never connect.
@@ -54,7 +54,7 @@ Free-text → capability_category resolver. Two sections: `products` (pipeline `
 `gap_table(account_row, install_base) -> DataFrame` — for each obligation in the account's regulatory_scope: required capability, matching product label, status ∈ {landed, partial, gap}. Status resolution goes through product_map: landed = any install_base entry resolves to the obligation's capability_category; partial = no install match but an incumbent_tools entry resolves to it (displace play); else gap. `whitespace_estimate(gap_df, pipeline_df)` — sum of open pipeline whose product resolves (via product_map) to a gap category + count of uncovered gaps with zero pipeline (the "no play exists yet" list — arguably the most valuable output). Unresolvable products are excluded from the estimate and reported, never guessed.
 
 ## Task 3: plan composer — core/plan.py
-`compose(account, gaps, pipeline) -> dict` with sections: account summary; current footprint; obligation gap table; open pipeline for account; whitespace + uncovered gaps; MCEM next actions (rule-based: gap+no pipeline → "Inspire/Design play", partial → "displacement play at Empower", landed → "expand/Realize"); relationship map placeholder (human section, like QBR asks).
+`compose(account, gaps, pipeline) -> dict` with sections: account summary; current footprint; obligation gap table; open pipeline for account; whitespace + uncovered gaps; Next actions (rule-based: gap+no pipeline → "Inspire/Design play", partial → "displacement play at Empower", landed → "expand/Realize"); relationship map placeholder (human section, like QBR asks).
 
 ## Task 4: Streamlit page — app/pages/3_Account_Plan.py
 1. Account-facts upload with mapping flow (schema-parameterized components) OR pick previously imported account. Account names normalized at import via ingest.normalize_name + config/aliases.yaml — same path as pipeline imports.
@@ -84,5 +84,5 @@ Project complete for MVP scope. Post-validation backlog (do NOT build now):
 - Manager roll-up page (owner_rollup already tested in forecast.py)
 - Branded pptx template via styles.py
 - Optional LLM narrative polish behind ANTHROPIC_API_KEY
-- Real MSX header mapping profile — create after Adam/day-one provides actual column headers (headers only, never data, pre-hire)
+- Real CRM header mapping profile — create once actual export column headers are available (headers only, never data)
 Demo order for interviews: Home mapping screen → Forecast Narrative → QBR download → Account Plan gap table.

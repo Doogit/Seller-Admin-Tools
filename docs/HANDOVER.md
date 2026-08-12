@@ -75,7 +75,7 @@
 ## Known deferred items (deliberate, do NOT build without asking)
 
 - PRD 03 backlog: manager roll-up page, branded pptx template, LLM polish
-  behind ANTHROPIC_API_KEY, real MSX header profile.
+  behind ANTHROPIC_API_KEY, real CRM header profile.
 - Advisory review findings consciously skipped: case-variant stage collision
   warning; explicit "update existing profile" confirm (mitigated by
   stage-assignment merge); mapping.save_profile thin wrappers (intended seam).

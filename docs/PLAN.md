@@ -36,11 +36,11 @@ Sessions hard-chained: 00 → 01 → 02 → 03. Efficiency comes from within-ses
 ### Session 1 — Foundation (branch `feat/foundation-ingest`)
 1. Scaffold repo layout per PRD (README with "Data handling" section; .gitignore & .gitattributes per decision 10).
 2. `core/schema.py` (field dicts + `validate_frame`), `core/ingest.py` (`load_csv` per decisions 8/11; `normalize_name` + aliases), `core/mapping.py` (`suggest_mapping`, profile save/load), `core/store.py` (`db_path` param; mapping_profiles; snapshots w/ `as_of_date` + file_sha256 dup guard; opportunities append-only + index), `core/importer.py` (decision 3).
-3. `config/stage_map.yaml` (generic + MCEM examples), `config/aliases.yaml` (Meridian pre-seeded).
+3. `config/stage_map.yaml` (generic + numbered-stage examples), `config/aliases.yaml` (Meridian pre-seeded).
 4. `app/Home.py` per PRD steps 1–7, as a thin wrapper over component functions + importer.
 5. `sample_data/energy_pipeline_sample.csv` per decision 9 (40 rows, all PRD-00 failure classes + full-arc columns). `sample_data/seed_snapshots.py` — seeds the demo DB via importer with backdated `as_of_date` (decision 6); justified as distinct from tests (tests use tmp DBs; this seeds the demo `data/agents.db` that downstream session pre-flights and the live demo require).
 6. Tests `test_mapping.py`, `test_ingest.py` per PRD + all-ambiguous fixture, mixed-currency warning, conflict-error branch. **Profile-reuse test (restored)**: save profile → load → zero re-selections needed to re-import; duplicate-hash triggers the warning path with `on_duplicate='ask'`.
-7. Verify: pytest green; seed; SQLite counts via Python (40 rows; Meridian distinct-count = 1); grep guard msx/mssales; headless smoke per decision 4.
+7. Verify: pytest green; seed; SQLite counts via Python (40 rows; Meridian distinct-count = 1); grep guard: no CRM-vendor strings in core/; headless smoke per decision 4.
 
 ### Session 2 — Forecast narrative (branch `feat/forecast-narrative`)
 1. `core/forecast.py`: `bucket_rollup` (forecast_category precedence, stage-derived fallback + label), `wow_delta` per decision 7, `risk_flags` via `config/risk_rules.yaml` (stalled per decision 6; slipped; no_sponsor; big_and_late) with evidence strings.

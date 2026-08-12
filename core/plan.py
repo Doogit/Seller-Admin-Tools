@@ -12,17 +12,17 @@ from core import crosswalk, styles
 from core.deck import SLIDE_H, SLIDE_W, _add_footer, _add_title
 from core.formatting import fmt_money
 
-MCEM_ACTIONS = {
-    "uncovered_gap": "Inspire/Design play",
-    "gap_with_pipeline": "Design/Empower — pursue open pipeline",
-    "partial": "Displacement play at Empower",
-    "landed": "Expand at Realize",
+PLAY_ACTIONS = {
+    "uncovered_gap": "New capability play",
+    "gap_with_pipeline": "Pursue open pipeline",
+    "partial": "Displacement play",
+    "landed": "Expand / renew",
 }
 
 
 def compose(account_row, gap_df: pd.DataFrame, whitespace: dict,
             pipeline_df: pd.DataFrame) -> dict:
-    """Assemble the MCEM-structured plan sections from precomputed inputs."""
+    """Assemble the structured account-plan sections from precomputed inputs."""
     install = crosswalk._split(account_row.get("install_base"))
     incumbents = crosswalk._split(account_row.get("incumbent_tools"))
     scopes = crosswalk._split(account_row.get("regulatory_scope"))
@@ -51,13 +51,13 @@ def compose(account_row, gap_df: pd.DataFrame, whitespace: dict,
         cat = g["capability_category"]
         if g["status"] == "gap":
             kind = "uncovered_gap" if cat in uncovered_cats else "gap_with_pipeline"
-            detail = (f"{MCEM_ACTIONS[kind]}: {cat} ({g['product_label']})"
+            detail = (f"{PLAY_ACTIONS[kind]}: {cat} ({g['product_label']})"
                       + (" — no pipeline exists yet" if kind == "uncovered_gap" else ""))
         elif g["status"] == "partial":
-            detail = (f"{MCEM_ACTIONS['partial']}: displace {g['matched_item']} "
+            detail = (f"{PLAY_ACTIONS['partial']}: displace {g['matched_item']} "
                       f"with {g['product_label']} ({cat})")
         else:
-            detail = f"{MCEM_ACTIONS['landed']}: {g['product_label']} landed ({cat})"
+            detail = f"{PLAY_ACTIONS['landed']}: {g['product_label']} landed ({cat})"
         key = (g["status"], cat)
         if key not in seen:
             seen.add(key)
@@ -127,7 +127,7 @@ def plan_md(sections: dict, disclaimer: str) -> str:
         )
     lines += [
         "",
-        "## MCEM next actions",
+        "## Next actions",
         *[f"- {a}" for a in sections["next_actions"]],
         "",
         "## Relationship map",
@@ -211,7 +211,7 @@ def plan_pptx(sections: dict, disclaimer: str) -> BytesIO:
 
     # 4 — next actions
     s = prs.slides.add_slide(blank)
-    _add_title(s, "MCEM next actions")
+    _add_title(s, "Next actions")
     bullets_box(s, sections["next_actions"] + [sections["relationship_map"]])
 
     for slide in prs.slides:

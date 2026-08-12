@@ -172,7 +172,7 @@ def test_plan_compose_and_exports(facts, db_path, sample_snapshot):
 
     md = plan.plan_md(sections, "VERIFY BEFORE USE")
     for part in ("## Obligation → capability → gap", "## Whitespace",
-                 "## MCEM next actions", "VERIFY BEFORE USE"):
+                 "## Next actions", "VERIFY BEFORE USE"):
         assert part in md
 
     from pptx import Presentation

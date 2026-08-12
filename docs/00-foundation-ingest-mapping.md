@@ -6,7 +6,7 @@ stack: Python 3.11+, SQLite, Streamlit, pandas
 status: ready-to-run
 depends_on: none
 rationale: >
-  MSX/MSSales export schemas are not publicly documented. Design decision:
+  CRM export schemas are not publicly documented. Design decision:
   never hard-code source column names. All tools reference a canonical schema;
   a user-facing mapping screen translates any CSV export to canonical fields.
   Schema incompatibility becomes a 30-second remap, not a rebuild.
@@ -17,10 +17,10 @@ rationale: >
 ## Constraints
 - Branch required: yes — `feat/foundation-ingest`
 - READ-ONLY posture: no writes to any external system, no network calls, no telemetry. All data stays local (SQLite file + session state).
-- Vendor-neutral: no Microsoft-specific column names anywhere in core logic. MCEM stage labels live in a config file, not code.
+- Vendor-neutral: no CRM-specific column names anywhere in core logic. sales-stage labels live in a config file, not code.
 - No auth, no multi-user. Single-operator local tool.
 - Do not install heavyweight deps. Allowed: streamlit, pandas, pyyaml. Nothing else without documenting why. Pin exact versions in requirements.txt (demo-stability guarantee).
-- Confidentiality (runtime, not just repo): pre-hire, fictional data only. Post-hire, real exports and data/agents.db exist ONLY on a corporate-managed device. State this in README under "Data handling."
+- Confidentiality (runtime, not just repo): This repo ships fictional data only. Any real CRM exports and data/agents.db live only on the operator's own machine and are never committed. State this in README under "Data handling."
 - Single-currency assumption (USD): strip symbols/separators; mixed-currency detection is out of scope v1 — if multiple currency symbols detected in the amount column, warn and proceed.
 
 ## Objective
@@ -57,7 +57,7 @@ Optional fields (mapping screen offers them; tools degrade gracefully if absent)
 | exec_sponsor | str | Tool 3 risk detection |
 | created_date | date | stage-aging calc |
 
-Stage normalization: `config/stage_map.yaml` maps raw stage strings → canonical buckets `early | mid | late | closed_won | closed_lost`. Ship a default with generic labels AND common MCEM-style labels (01 Inspire, 02 Design, 03 Empower, 04 Achieve, 05 Realize) as examples. Unmapped stages surface in the UI for one-click assignment; assignments persist to the profile.
+Stage normalization: `config/stage_map.yaml` maps raw stage strings → canonical buckets `early | mid | late | closed_won | closed_lost`. Ship a default with generic labels AND common numbered enterprise-stage labels (01 Inspire, 02 Design, 03 Empower, 04 Achieve, 05 Realize) as examples. Unmapped stages surface in the UI for one-click assignment; assignments persist to the profile.
 
 ## Repo layout to create
 ```
@@ -76,7 +76,7 @@ sales-admin-agents/
     Home.py          # Streamlit entry: upload → map → confirm → save snapshot
     pages/           # empty; tools 1–3 add pages here
   sample_data/
-    energy_pipeline_sample.csv   # 40 fictional rows, energy accounts, MCEM stages
+    energy_pipeline_sample.csv   # 40 fictional rows, energy accounts, numbered enterprise stages
   tests/
     test_mapping.py
     test_ingest.py
@@ -117,7 +117,7 @@ Flow (single page, top to bottom, no tabs):
 7. Confirm → save profile (prompt for name) → write snapshot (prompt for label, default ISO week; duplicate-hash warning per store.py) → success summary: N rows, M accounts, total pipeline $.
 
 ## Task 3: Sample data + tests
-- Generate `sample_data/energy_pipeline_sample.csv`: 40 rows, fictional energy accounts (utilities, oil & gas, pipeline operators), deliberately messy headers ("Est. Revenue", "Close Dt", "Sales Stage"), an Opportunity ID column, MCEM-style stage labels, 2 unmapped stage values, 1 malformed date, 1 all-ambiguous date pair (03/04/2026), 1 negative amount, and one account appearing as both "Meridian Energy" and "Meridian Energy Corp" — so the demo shows the tool catching every failure class.
+- Generate `sample_data/energy_pipeline_sample.csv`: 40 rows, fictional energy accounts (utilities, oil & gas, pipeline operators), deliberately messy headers ("Est. Revenue", "Close Dt", "Sales Stage"), an Opportunity ID column, numbered enterprise-stage labels, 2 unmapped stage values, 1 malformed date, 1 all-ambiguous date pair (03/04/2026), 1 negative amount, and one account appearing as both "Meridian Energy" and "Meridian Energy Corp" — so the demo shows the tool catching every failure class.
 - Ship config/aliases.yaml pre-seeded for the sample's Meridian variant.
 - tests: suggest_mapping resolves the sample headers; ingest coerces amounts; mdy vs dmy produce different (correct) dates for the ambiguous row; normalize_name unifies the Meridian variants; store round-trips a snapshot; duplicate hash raises the warning path.
 
@@ -128,7 +128,7 @@ Flow (single page, top to bottom, no tabs):
 - [ ] Persistence: `sqlite3 data/agents.db "select count(*) from opportunities"` → 40
 - [ ] Profile reuse: re-upload same CSV, pick saved profile → mapping + date format pre-filled, duplicate-hash warning shown, zero manual selections needed
 - [ ] Alias normalization: post-import, `sqlite3 data/agents.db "select count(distinct account_name) from opportunities"` counts Meridian once
-- [ ] Grep guard: `grep -ri "msx\|mssales" core/ app/` → no matches (vendor neutrality)
+- [ ] Grep guard: `grep -ri "vendor-crm-name" core/ app/` → no matches (vendor neutrality)
 
 ## Final output
 Return: files created, test results, verification outputs, branch + PR link, any deviations with rationale.

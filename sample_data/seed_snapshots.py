@@ -6,7 +6,7 @@ Creates (via core.importer — the exact path Home.py uses):
   2. "wk32" — the sample CSV as-is, as-of today.
 
 Prior-week mutations (all deliberate, to exercise week-over-week logic):
-  - Most opportunities are set one MCEM stage earlier, so they appear to have
+  - Most opportunities are set one stage earlier, so they appear to have
     advanced into their current stage this period (stage age ~0 days).
   - OP-1005 and OP-1024 keep their current stage -> 49 days in-stage, so the
     "stalled" rule (>=45 days) fires on them in the current snapshot.
