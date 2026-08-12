@@ -5,3 +5,8 @@ __pycache__/
 .venv/
 .pytest_cache/
 .coverage
+
+# Agent workspace files — local only, NEVER pushed (public repo).
+/CLAUDE.md
+/CLAUDE.local.md
+.claude/
