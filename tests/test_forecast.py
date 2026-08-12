@@ -96,6 +96,26 @@ def test_mixed_id_and_name_matching(db_path):
     assert by_type["unmatched"] == ["Mystery Deal"]  # no ID, no name match
 
 
+def test_duplicate_id_demotes_to_name_join(db_path):
+    # Two rows share opportunity_id "D1" in both snapshots. Last-wins on the ID
+    # key would cross-wire them and report phantom moves on an unchanged pair;
+    # demoting duplicates to the name-join path pins each row to its true match.
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="D1", opportunity_name="Dup A", stage="02 Design"),
+        opp(opportunity_id="D1", opportunity_name="Dup B", stage="02 Design"),
+        opp(opportunity_id="U1", opportunity_name="Unique Deal", stage="02 Design"),
+    ], "w1", "2026-08-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="D1", opportunity_name="Dup A", stage="02 Design"),
+        opp(opportunity_id="D1", opportunity_name="Dup B", stage="03 Empower",
+            stage_bucket="mid"),
+        opp(opportunity_id="U1", opportunity_name="Unique Deal", stage="02 Design"),
+    ], "w2", "2026-08-08")
+    deltas = forecast.wow_delta(cur, prior, db_path=db_path)
+    by_type = deltas.groupby("change_type")["opportunity_name"].apply(list).to_dict()
+    assert by_type == {"moved stage": ["Dup B"]}  # only the real change, no phantoms
+
+
 def test_slip_detected(db_path):
     prior = make_snapshot(db_path, [opp(opportunity_id="S1", close_date="2026-09-30")],
                           "w1", "2026-08-01")

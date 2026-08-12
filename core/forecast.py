@@ -110,13 +110,18 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
 
     cur_ids = cur["opportunity_id"]
     pri_ids = pri["opportunity_id"]
-    pri_by_id = {v: i for i, v in pri_ids.items() if v}
+    # Duplicate non-empty IDs within a snapshot can't be trusted as a join key
+    # (last-wins would cross-wire rows), so demote them to the name-join path.
+    cur_dup = set(cur_ids[(cur_ids != "") & cur_ids.duplicated(keep=False)])
+    pri_dup = set(pri_ids[(pri_ids != "") & pri_ids.duplicated(keep=False)])
+    pri_by_id = {v: i for i, v in pri_ids.items() if v and v not in pri_dup}
     matches: list[tuple[int, int]] = []
     matched_pri: set[int] = set()
     unmatched_cur: list[int] = []
 
     for i, cid in cur_ids.items():
-        if cid and cid in pri_by_id and pri_by_id[cid] not in matched_pri:
+        if cid and cid not in cur_dup and cid in pri_by_id \
+                and pri_by_id[cid] not in matched_pri:
             matches.append((i, pri_by_id[cid]))
             matched_pri.add(pri_by_id[cid])
         else:
@@ -165,7 +170,7 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
                 f"close date moved {p['close_date']} → {c['close_date']} (+{days}d)")
 
     for i in still_unmatched_cur:
-        if cur_ids[i]:
+        if cur_ids[i] and cur_ids[i] not in cur_dup:
             add("new", cur, i, "not present last week")
         else:
             add("unmatched", cur, i,
@@ -173,7 +178,7 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
     for i in pri.index:
         if i in matched_pri:
             continue
-        if pri_ids[i]:
+        if pri_ids[i] and pri_ids[i] not in pri_dup:
             add("disappeared", pri, i, "present last week, gone this week")
         else:
             add("unmatched", pri, i,
