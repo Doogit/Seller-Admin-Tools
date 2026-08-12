@@ -116,6 +116,23 @@ def test_duplicate_id_demotes_to_name_join(db_path):
     assert by_type == {"moved stage": ["Dup B"]}  # only the real change, no phantoms
 
 
+def test_duplicate_name_residuals_do_not_last_wins_match(db_path):
+    # No-ID duplicate name keys are ambiguous in the same way duplicate IDs are:
+    # last-wins would cross-wire the first current row to the second prior row
+    # and report a false amount change.
+    prior = make_snapshot(db_path, [
+        opp(opportunity_name="Renewal", amount=100000.0),
+        opp(opportunity_name="Renewal", amount=200000.0),
+    ], "w1", "2026-08-01")
+    cur = make_snapshot(db_path, [
+        opp(opportunity_name="Renewal", amount=100000.0),
+        opp(opportunity_name="Renewal", amount=200000.0),
+    ], "w2", "2026-08-08")
+    deltas = forecast.wow_delta(cur, prior, db_path=db_path)
+    assert not (deltas["change_type"] == "amount changed").any()
+    assert deltas["change_type"].tolist() == ["unmatched", "unmatched", "unmatched", "unmatched"]
+
+
 def test_slip_detected(db_path):
     prior = make_snapshot(db_path, [opp(opportunity_id="S1", close_date="2026-09-30")],
                           "w1", "2026-08-01")
@@ -352,6 +369,20 @@ def test_top_deals_accepts_precomputed_flags(db_path):
     reused = forecast.top_deals(cur, db_path=db_path, flags=flags)
     assert internal["flags"].tolist() == reused["flags"].tolist()
     assert (reused["flags"] == "no_sponsor").any()
+
+
+def test_top_deals_uses_id_aware_flag_lookup(db_path):
+    # Two distinct deals can share a name, but they must not inherit the same
+    # risk labels by account+opportunity name alone.
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="A1", account_name="acme", opportunity_name="Renewal",
+            amount=900000.0, exec_sponsor=""),
+        opp(opportunity_id="A2", account_name="acme", opportunity_name="Renewal",
+            amount=850000.0, exec_sponsor="Jane Exec"),
+    ], "w1", "2026-08-11")
+    flags = forecast.risk_flags(cur, db_path=db_path)
+    top = forecast.top_deals(cur, db_path=db_path, flags=flags)
+    assert top["flags"].tolist() == ["no_sponsor", ""]
 
 
 def test_narrative_offline_socket_guard(db_path, sample_snapshot, monkeypatch):

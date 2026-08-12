@@ -1,5 +1,5 @@
 # Free-text -> capability_category resolver. Matching is case-insensitive
-# substring against these alias lists. `products` covers our product labels
+# whole-word / whole-phrase against these alias lists. `products` covers our product labels
 # (pipeline `product` values and install_base entries); `incumbents` covers
 # competitor tools (a resolved incumbent = displacement play = "partial").
 # Unresolved values surface in the UI with an assign-category control that

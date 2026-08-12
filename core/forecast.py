@@ -150,13 +150,22 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
     def name_key(df, i):
         return _name_key(df.at[i, "account_name"], df.at[i, "opportunity_name"])
 
+    residual_pri = [i for i in pri.index if i not in matched_pri]
+    pri_name_keys = pd.Series({i: name_key(pri, i) for i in residual_pri})
+    cur_name_keys = pd.Series({i: name_key(cur, i) for i in unmatched_cur})
+    pri_name_dup = set(pri_name_keys[pri_name_keys.duplicated(keep=False)])
+    cur_name_dup = set(cur_name_keys[cur_name_keys.duplicated(keep=False)])
     pri_by_name = {
-        name_key(pri, i): i for i in pri.index
-        if i not in matched_pri
+        key: i for i, key in pri_name_keys.items()
+        if key not in pri_name_dup
     }
     still_unmatched_cur = []
     for i in unmatched_cur:
-        j = pri_by_name.get(name_key(cur, i))
+        key = cur_name_keys[i]
+        if key in cur_name_dup:
+            still_unmatched_cur.append(i)
+            continue
+        j = pri_by_name.get(key)
         if j is not None and j not in matched_pri:
             matches.append((i, j))
             matched_pri.add(j)
@@ -198,6 +207,9 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
     for i in still_unmatched_cur:
         if cur_ids[i] and cur_ids[i] not in cur_dup:
             add("new", cur, i, "not present last week")
+        elif cur_ids[i] in cur_dup:
+            add("unmatched", cur, i,
+                "duplicate opportunity_id and no unique name match in prior snapshot")
         else:
             add("unmatched", cur, i,
                 "no opportunity_id and no name match in prior snapshot — renamed or ID missing?")
@@ -206,6 +218,9 @@ def wow_delta(current_id: int, prior_id: int | None, db_path=None) -> pd.DataFra
             continue
         if pri_ids[i] and pri_ids[i] not in pri_dup:
             add("disappeared", pri, i, "present last week, gone this week")
+        elif pri_ids[i] in pri_dup:
+            add("unmatched", pri, i,
+                "prior-week duplicate opportunity_id with no unique name match this week")
         else:
             add("unmatched", pri, i,
                 "prior-week row with no opportunity_id and no name match this week")
@@ -245,12 +260,21 @@ def top_deals(snapshot_id: int, n: int = 10, db_path=None, flags=None) -> pd.Dat
     ).head(n)
     if flags is None:
         flags = risk_flags(snapshot_id, db_path=db_path)
-    flag_map: dict[tuple, list[str]] = {}
+    flags = dedup_flags(flags)
+
+    def key_for(row):
+        ident = str(row.get("opportunity_id", "")).strip()
+        if ident:
+            return ident
+        return _name_key(row["account_name"], row["opportunity_name"])
+
+    flag_map: dict[str, list[str]] = {}
     for _, f in flags.iterrows():
-        flag_map.setdefault((f["opportunity_name"], f["account_name"]), []).append(f["rule"])
+        flag_map.setdefault(key_for(f), []).append(f["rule"])
+
     out = top[["opportunity_name", "account_name", "stage", "amount", "close_date", "owner"]].copy()
     out["flags"] = [
-        ", ".join(flag_map.get((r["opportunity_name"], r["account_name"]), []))
+        ", ".join(flag_map.get(key_for(r), []))
         for _, r in top.iterrows()
     ]
     return out.reset_index(drop=True)
