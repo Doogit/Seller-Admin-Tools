@@ -24,6 +24,7 @@ from fasthtml.common import (  # noqa: E402
 )
 
 from web.components import landing  # noqa: E402
+from web.routes import forecast_narrative  # noqa: E402
 
 STATIC_DIR = REPO_ROOT / "web" / "static"
 
@@ -51,6 +52,9 @@ for _h in app.hdrs:
 @rt("/")
 def index():
     return landing()
+
+
+forecast_narrative.register(rt)
 
 
 if __name__ == "__main__":
