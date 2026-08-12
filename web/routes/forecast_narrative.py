@@ -17,52 +17,15 @@ from __future__ import annotations
 
 from fasthtml.common import (
     Button, Details, Div, Form, H1, H2, Input, Label, Option, P, Pre, Script,
-    Select, Span, Summary, Table, Tbody, Td, Th, Thead, Tr, Textarea,
+    Select, Span, Summary, Textarea,
 )
 from starlette.responses import Response
 
 from core.views import forecast_narrative as vm
-from web.components import page
+from web.components import data_table, metric_cards, page
+from web.routes import _params
 
 BASE = "/forecast-narrative"
-
-
-# --- selection resolution ----------------------------------------------------
-
-def _resolve(current_id, prior_id, options):
-    ids = [o[0] for o in options]
-    if not options:
-        return None, None
-    if current_id not in ids:
-        return vm.default_selection(options)
-    if prior_id is not None and (prior_id not in ids or prior_id == current_id):
-        rest = [i for i in ids if i != current_id]
-        prior_id = rest[0] if rest else None
-    return current_id, prior_id
-
-
-def _pid(prior_id: str | None):
-    """Compare-select value: "" (explicit none) -> None, else int."""
-    return int(prior_id) if prior_id not in (None, "") else None
-
-
-def _cid(current_id: str | None):
-    """Parse the snapshot id defensively — a cleared/absent value yields None so
-    the caller falls back to the default selection rather than 404-ing on int
-    coercion of an empty string."""
-    try:
-        return int(current_id) if current_id not in (None, "") else None
-    except (TypeError, ValueError):
-        return None
-
-
-def _quota(quota: str | None):
-    """Session-only quota; empty/invalid -> None (coverage shows —)."""
-    try:
-        q = float(quota) if quota not in (None, "") else None
-    except (TypeError, ValueError):
-        return None
-    return q or None
 
 
 # --- fragments ---------------------------------------------------------------
@@ -110,45 +73,12 @@ def _controls(v: vm.ForecastView):
     )
 
 
-def _metric_card(label, value, delta=None):
-    return Div(
-        P(label, cls="text-xs font-medium text-slate-500"),
-        P(value, cls="mt-1 text-xl font-semibold text-slate-900"),
-        (P(delta, cls="text-xs text-slate-500") if delta else ""),
-        cls="rounded-lg border border-slate-200 bg-white p-4",
-    )
-
-
 def _metrics(v: vm.ForecastView):
-    m = v.metrics
-    cards = Div(
-        _metric_card("Commit", m["commit"], m["commit_delta"]),
-        _metric_card("Upside", m["upside"], m["upside_delta"]),
-        _metric_card("Coverage", m["coverage"]),
-        _metric_card("At risk", m["at_risk"]),
-        cls="grid gap-3 sm:grid-cols-4",
-    )
-    notes = [P(n, cls="mt-2 text-xs text-slate-500")
-             for n in (m["derived_note"], m["unclassified_note"]) if n]
     warn = ([Div(v.unmatched["warning"],
                  cls="mt-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 "
                      "text-sm text-amber-800", role="status")]
             if v.unmatched["warning"] else [])
-    return Div(cards, *notes, *warn, id="metrics")
-
-
-def _table(columns, rows, empty_text=None):
-    if not rows:
-        return P(empty_text or "", cls="text-sm text-slate-600")
-    head = Thead(Tr(*(Th(c.replace("_", " "),
-                         cls="px-2 py-1 text-left font-medium text-slate-600")
-                      for c in columns)))
-    body = Tbody(*(Tr(*(Td(str(r.get(c, "")), cls="px-2 py-1 align-top")
-                        for c in columns),
-                      cls="border-t border-slate-100")
-                   for r in rows))
-    return Div(Table(head, body, cls="w-full text-sm"),
-               cls="overflow-x-auto rounded border border-slate-200")
+    return Div(metric_cards(v.metrics), *warn, id="metrics")
 
 
 def _draft_inner(v: vm.ForecastView):
@@ -212,7 +142,7 @@ def _risk(v: vm.ForecastView):
         H2("Risk detail (coaching view)",
            cls="mt-6 text-base font-semibold text-slate-900"),
         *[P(n, cls="text-xs text-slate-500") for n in r["notes"]],
-        _table(r["columns"], r["rows"], r["empty_text"]),
+        data_table(r["columns"], r["rows"], r["empty_text"]),
     )
 
 
@@ -223,7 +153,7 @@ def _movement(v: vm.ForecastView):
     return Details(
         Summary("Week-over-week movement detail",
                 cls="cursor-pointer text-sm font-medium text-slate-700"),
-        Div(_table(mv["columns"], mv["rows"]), cls="mt-2"),
+        Div(data_table(mv["columns"], mv["rows"]), cls="mt-2"),
         cls="mt-4",
     )
 
@@ -268,31 +198,31 @@ def register(rt):
         options = vm.snapshot_options()
         if not options:
             return _empty_page()
-        cid, pid = _resolve(_cid(current_id), _pid(prior_id), options)
-        return _full_page(vm.build(cid, pid, _quota(quota)))
+        cid, pid = _params.resolve(_params.cid(current_id), _params.pid(prior_id), options)
+        return _full_page(vm.build(cid, pid, _params.quota(quota)))
 
     @rt(f"{BASE}/body")
     def get(current_id: str = None, prior_id: str = None, quota: str = None):
         options = vm.snapshot_options()
-        cid, pid = _resolve(_cid(current_id), _pid(prior_id), options)
-        return _body(vm.build(cid, pid, _quota(quota)))
+        cid, pid = _params.resolve(_params.cid(current_id), _params.pid(prior_id), options)
+        return _body(vm.build(cid, pid, _params.quota(quota)))
 
     @rt(f"{BASE}/metrics")
     def get(current_id: str = None, prior_id: str = None, quota: str = None):
         options = vm.snapshot_options()
-        cid, pid = _resolve(_cid(current_id), _pid(prior_id), options)
-        return _metrics(vm.build(cid, pid, _quota(quota)))
+        cid, pid = _params.resolve(_params.cid(current_id), _params.pid(prior_id), options)
+        return _metrics(vm.build(cid, pid, _params.quota(quota)))
 
     @rt(f"{BASE}/draft", methods=["post"])
     def post(current_id: str = None, prior_id: str = None, quota: str = None):
         options = vm.snapshot_options()
-        cid, pid = _resolve(_cid(current_id), _pid(prior_id), options)
-        return _draft_inner(vm.build(cid, pid, _quota(quota)))
+        cid, pid = _params.resolve(_params.cid(current_id), _params.pid(prior_id), options)
+        return _draft_inner(vm.build(cid, pid, _params.quota(quota)))
 
     @rt(f"{BASE}/export", methods=["post"])
     def post(commit: str = "", upside: str = "", risk: str = "",
              current_id: str = None):
-        cid = _cid(current_id)
+        cid = _params.cid(current_id)
         period = vm.period_for(cid) if cid is not None else ""
         md = vm.export_markdown(
             {"commit": commit, "upside": upside, "risk": risk}, period)
