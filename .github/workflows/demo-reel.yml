@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pillow
+      - run: pip install pillow==11.3.0
       - run: python scripts/build_demo_reel.py
       - name: Commit refreshed reel if it changed
         run: |

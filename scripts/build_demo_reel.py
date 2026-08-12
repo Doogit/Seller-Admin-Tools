@@ -13,7 +13,7 @@ Per-frame durations keep each dwell a single frame, so the GIF stays small.
     python scripts/build_demo_reel.py            # writes docs/demo-reel.gif
     python scripts/build_demo_reel.py --check     # exit 1 if the GIF is stale
 
-Requires Pillow (`pip install pillow`).
+Requires Pillow (`pip install pillow==11.3.0`).
 """
 
 from __future__ import annotations
