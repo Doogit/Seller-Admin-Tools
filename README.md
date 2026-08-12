@@ -310,7 +310,7 @@ web/          FastHTML app for the three tools:
 app/          Streamlit entry: Home.py (ingest & mapping) + mapping_ui helpers
 sample_data/  fictional sample CSVs + seed script
 scripts/      build-only tooling (demo-reel GIF), not a runtime dependency
-tests/        pytest suite (TESTCOUNT tests)
+tests/        pytest suite (173 tests)
 data/         SQLite database (created at runtime, git-ignored)
 ```
 
@@ -342,7 +342,7 @@ shared core.
 python -m pytest
 ```
 
-TESTCOUNT tests cover the ingest/mapping pipeline, forecast analytics (including
+173 tests cover the ingest/mapping pipeline, forecast analytics (including
 week-over-week matching, risk-flag boundaries, the multi-week trend, and
 commit-conversion credibility), deck consistency, the compliance crosswalk, the
 per-tool view models, and the FastHTML routes (golden parity gates hold the
