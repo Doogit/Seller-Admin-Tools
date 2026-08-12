@@ -40,10 +40,12 @@ FRAME_WIDTH = 900                       # px
 FRAME_HEIGHT = FRAME_WIDTH * 10 // 16   # 16:10 viewport -> 562
 COLORS = 128
 
-TARGET_SCROLL_STEP = 95                 # px between scroll frames (tuned for size)
-MAX_SCROLL_FRAMES = 14                  # cap per page, so long pages scroll faster
-SCROLL_MS = 45                          # per scroll frame (~22fps)
-DWELL_MS = 1100                         # single held frame at top and bottom of each page
+TARGET_SCROLL_STEP = 70                 # px between scroll frames (smaller = smoother/slower)
+MAX_SCROLL_FRAMES = 20                  # cap per page, so long pages scroll faster
+SCROLL_MS = 90                          # per scroll frame (higher = slower scroll)
+TOP_DWELL_MS = 3200                     # held frame at the top of each page (time to read before it scrolls)
+BOTTOM_DWELL_MS = 1800                  # held frame at the bottom of each page
+# Dwell frames are single held frames, so a longer pause costs no extra file size.
 
 
 def _viewport(page: Image.Image, y: int) -> Image.Image:
@@ -63,12 +65,12 @@ def _page_frames(name: str) -> tuple[list[Image.Image], list[int]]:
     if distance <= 0:                   # page shorter than the viewport: pad and hold
         canvas = Image.new("RGB", (FRAME_WIDTH, FRAME_HEIGHT), "white")
         canvas.paste(page, (0, 0))
-        return [canvas.quantize(colors=COLORS, method=Image.MEDIANCUT, dither=Image.Dither.NONE)], [DWELL_MS]
+        return [canvas.quantize(colors=COLORS, method=Image.MEDIANCUT, dither=Image.Dither.NONE)], [TOP_DWELL_MS]
 
     steps = min(MAX_SCROLL_FRAMES, max(1, round(distance / TARGET_SCROLL_STEP)))
     ys = [round(i * distance / steps) for i in range(steps + 1)]  # 0 .. distance inclusive
     frames = [_viewport(page, y) for y in ys]
-    durations = [DWELL_MS] + [SCROLL_MS] * (len(frames) - 2) + [DWELL_MS]
+    durations = [TOP_DWELL_MS] + [SCROLL_MS] * (len(frames) - 2) + [BOTTOM_DWELL_MS]
     return frames, durations
 
 
