@@ -40,11 +40,27 @@ def gather(snapshot_id: int, prior_id: int | None, meta: dict, db_path=None) -> 
         "top": forecast.top_deals(snapshot_id, db_path=db_path, flags=flags),
         "owner_rollup": forecast.owner_rollup(snapshot_id, db_path=db_path, flags=flags),
         "trend": forecast.snapshot_trend(db_path=db_path, through_id=snapshot_id),
+        "commit_conversion": forecast.commit_conversion(snapshot_id, prior_id, db_path=db_path),
         "sub_vertical": forecast.sub_vertical_split(snapshot_id, db_path=db_path),
         "flags": flags,
         "at_risk": at_risk,
         "coverage": (rollup["total_open"] / quota) if quota else None,
     }
+
+
+def credibility_summary(cc: dict | None) -> str | None:
+    """One-line forecast-credibility read from commit_conversion, or None when
+    there is no prior snapshot / no prior commit deals to judge."""
+    if cc is None:
+        return None
+    resolved = cc["won"] + cc["lost"]
+    tail = f"{cc['still_open']} still open, {cc['disappeared']} no longer present"
+    if resolved:
+        rate = cc["won"] / resolved
+        return (f"Commit landed rate: {cc['won']} of {resolved} resolved prior "
+                f"commits won ({rate:.0%}); {tail}.")
+    return (f"Forecast credibility: none of last week's {cc['prior_commit_count']} "
+            f"commit deal(s) have resolved yet ({tail}).")
 
 
 def _arrow(current: float, prior: float | None) -> str:
@@ -230,8 +246,11 @@ def build_md(snapshot_id: int, prior_id: int | None = None, meta: dict | None = 
         + _arrow(rollup["upside"], prior_rollup["upside"] if prior_rollup else None),
         "- Coverage: " + (f"{d['coverage']:.1f}x" if d["coverage"] else "— (no quota)"),
         f"- At risk: {fmt_money(d['at_risk'])}",
-        "",
     ]
+    cred = credibility_summary(d.get("commit_conversion"))
+    if cred:
+        lines.append(f"- {cred}")
+    lines.append("")
     trend = d.get("trend")
     if trend is not None and len(trend) >= 2:
         lines += ["## Trend (commit / upside / at-risk by week)",

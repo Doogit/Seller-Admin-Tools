@@ -54,6 +54,10 @@ data = deck.gather(current_id, prior_id, meta)
 ui.metric_row(data["rollup"], data["prior_rollup"], quota or None, data["at_risk"])
 st.caption("Numbers identical to Forecast Narrative for the same snapshot.")
 
+cred = deck.credibility_summary(data["commit_conversion"])
+if cred:
+    st.caption(cred)
+
 trend = data["trend"]
 if len(trend) >= 2:
     st.subheader("Trend (through this snapshot)")

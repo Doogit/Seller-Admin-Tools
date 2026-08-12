@@ -221,3 +221,19 @@ def test_all_gap_account_plan_renders(facts):
     assert "(no open pipeline for this account)" in md
     from pptx import Presentation
     assert len(Presentation(plan.plan_pptx(sections, "d")).slides) == 4
+
+
+def test_whitespace_unmeasurable_when_no_product():
+    import pandas as pd
+    from core import crosswalk
+    gap_df = pd.DataFrame(
+        [{"obligation_id": "X", "capability_category": "siem",
+          "product_label": "P", "status": "gap", "matched_item": ""}],
+        columns=crosswalk.GAP_COLUMNS,
+    )
+    pipeline = pd.DataFrame([
+        {"opportunity_name": "D1", "stage_bucket": "mid", "amount": 100000.0, "product": ""},
+    ])
+    ws = crosswalk.whitespace_estimate(gap_df, pipeline)
+    assert ws["unmeasurable"] is True
+    assert ws["whitespace_amount"] == 0.0

@@ -227,6 +227,29 @@ All under `config/`, editable YAML read at call time — no code change needed:
 | `obligation_map.yaml` | Regulatory obligation → required capability |
 | `product_map.yaml` | Product/competitor names → capability category |
 
+## For evaluators (cost, auditability, extensibility)
+
+If you are weighing this against a commercial suite:
+
+- **Cost of operation.** Zero infrastructure. It runs on one machine, fully
+  offline — no accounts, API keys, per-seat licensing, or network egress. The
+  only cost is a Python environment.
+- **Auditability.** Every output is **deterministic** (same snapshot → byte-
+  identical output; a test parses the commit figure back out of the built deck
+  and asserts it equals the narrative's). Every risk flag carries a plain-English
+  evidence string *including the firing threshold*, and all numbers are inserted
+  verbatim — there is no model deciding them. Snapshots are append-only and
+  keyed by file hash, so re-importing the same file is caught.
+- **Extensibility.** All behavior lives in editable YAML read at call time —
+  stage map, name aliases, risk thresholds + coaching asks, narrative wording,
+  and the compliance crosswalk. A new CRM format is a column remap saved as a
+  reusable profile, not a code change; the mapping/ingest pipeline is
+  schema-parameterized (pipeline snapshots and account facts share it).
+- **Deliberately absent** (vs. a commercial suite): CRM write-back, multi-user
+  auth, scheduled/automatic refresh, region-level roll-ups, multi-currency, and
+  AI-generated prose. These are out of scope by design — the point is an offline,
+  deterministic, auditable toolkit, not a platform.
+
 ## Architecture
 
 ```

@@ -308,6 +308,53 @@ def owner_rollup(snapshot_id: int, db_path=None, flags=None) -> pd.DataFrame:
     ).sort_values("commit", ascending=False).reset_index(drop=True)
 
 
+def commit_conversion(current_id: int, prior_id: int | None, db_path=None) -> dict | None:
+    """Forecast credibility: of the deals in forecast-commit in the prior
+    snapshot, how many have since landed (closed_won) vs slipped away
+    (closed_lost) vs are still open. `landed_rate` is won / (won + lost) — the
+    hit rate once a commit resolves — None until at least one has resolved.
+    Deals are matched by the same identity rule as wow_delta. Returns None when
+    there is no prior snapshot or the prior held no commit deals."""
+    if prior_id is None:
+        return None
+    cur = _clean(store.get_opportunities(current_id, db_path=db_path))
+    pri = _clean(store.get_opportunities(prior_id, db_path=db_path))
+    if cur.empty or pri.empty:
+        return None
+    prior_open, _ = _open_with_category(pri)
+    commit_prior = prior_open[prior_open["category"] == "commit"]
+    if commit_prior.empty:
+        return None
+
+    cur_keys = _keys(cur)
+    cur_dup = set(cur_keys[cur_keys.duplicated(keep=False)])
+    cur_by_key = {k: i for i, k in cur_keys.items() if k not in cur_dup}
+    pri_keys = _keys(pri)
+
+    won = lost = still_open = disappeared = 0
+    for i in commit_prior.index:
+        j = cur_by_key.get(pri_keys[i])
+        if j is None:
+            disappeared += 1
+            continue
+        bucket = cur.at[j, "stage_bucket"]
+        if bucket == "closed_won":
+            won += 1
+        elif bucket == "closed_lost":
+            lost += 1
+        else:
+            still_open += 1
+    resolved = won + lost
+    return {
+        "prior_commit_count": int(len(commit_prior)),
+        "won": won,
+        "lost": lost,
+        "still_open": still_open,
+        "disappeared": disappeared,
+        "landed_rate": (won / resolved) if resolved else None,
+    }
+
+
 TREND_COLUMNS = ["as_of_date", "label", "commit", "upside", "at_risk"]
 
 

@@ -441,3 +441,26 @@ def test_stalled_evidence_shows_threshold(db_path):
                         "w2", "2026-08-11")
     flags = forecast.risk_flags(cur, db_path=db_path)
     assert "flags at 45" in flags[flags["rule"] == "stalled"].iloc[0]["evidence"]
+
+
+def test_commit_conversion_counts_and_rate(db_path):
+    # Prior week: two commit deals (late stage -> commit) and one upside deal.
+    prior = make_snapshot(db_path, [
+        opp(opportunity_id="C1", stage_bucket="late", forecast_category="commit"),
+        opp(opportunity_id="C2", stage_bucket="late", forecast_category="commit"),
+        opp(opportunity_id="U1", stage_bucket="mid", forecast_category="upside"),
+    ], "w1", "2026-07-01")
+    # This week: C1 won, C2 lost, U1 (not a prior commit) irrelevant.
+    cur = make_snapshot(db_path, [
+        opp(opportunity_id="C1", stage_bucket="closed_won"),
+        opp(opportunity_id="C2", stage_bucket="closed_lost"),
+        opp(opportunity_id="U1", stage_bucket="mid"),
+    ], "w2", "2026-08-01")
+    cc = forecast.commit_conversion(cur, prior, db_path=db_path)
+    assert cc["prior_commit_count"] == 2
+    assert cc["won"] == 1 and cc["lost"] == 1
+    assert cc["landed_rate"] == pytest.approx(0.5)
+
+
+def test_commit_conversion_none_without_prior(db_path, sample_snapshot):
+    assert forecast.commit_conversion(sample_snapshot, None, db_path=db_path) is None
