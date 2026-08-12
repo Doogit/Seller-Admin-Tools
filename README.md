@@ -261,7 +261,7 @@ core/         pure logic, no UI:
                 crosswalk, plan                            (tool 3)
 app/          Streamlit entry (Home.py) + pages/ + shared render helpers
 sample_data/  fictional sample CSVs + seed script
-tests/        pytest suite (74 tests)
+tests/        pytest suite (97 tests)
 data/         SQLite database (created at runtime, git-ignored)
 ```
 
@@ -289,10 +289,11 @@ pages are thin wrappers that call them.
 python -m pytest
 ```
 
-74 tests cover the ingest/mapping pipeline, forecast analytics (including
-week-over-week matching and risk-flag boundaries), deck consistency, the
-compliance crosswalk, and empty/edge-case inputs. Tests use throwaway temp
-databases and never touch `data/agents.db`.
+97 tests cover the ingest/mapping pipeline, forecast analytics (including
+week-over-week matching, risk-flag boundaries, the multi-week trend, and
+commit-conversion credibility), deck consistency, the compliance crosswalk, and
+empty/edge-case inputs. Tests use throwaway temp databases and never touch
+`data/agents.db`.
 
 ## Not included (by design)
 

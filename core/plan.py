@@ -45,14 +45,22 @@ def compose(account_row, gap_df: pd.DataFrame, whitespace: dict,
 
     uncovered_cats = set(whitespace["uncovered"]["capability_category"]) \
         if not whitespace["uncovered"].empty else set()
+    matched = whitespace.get("matched")
+    pipeline_by_cat: dict[str, float] = {}
+    if matched is not None and not matched.empty:
+        pipeline_by_cat = matched.groupby("capability_category")["amount"].sum().to_dict()
     actions: list[str] = []
     seen: set[tuple] = set()
     for _, g in gap_df.iterrows():
         cat = g["capability_category"]
         if g["status"] == "gap":
             kind = "uncovered_gap" if cat in uncovered_cats else "gap_with_pipeline"
-            detail = (f"{PLAY_ACTIONS[kind]}: {cat} ({g['product_label']})"
-                      + (" — no pipeline exists yet" if kind == "uncovered_gap" else ""))
+            if kind == "uncovered_gap":
+                detail = f"{PLAY_ACTIONS[kind]}: {cat} ({g['product_label']}) — no pipeline exists yet"
+            else:
+                amt = pipeline_by_cat.get(cat, 0.0)
+                detail = (f"{PLAY_ACTIONS[kind]}: {cat} ({g['product_label']}) — "
+                          f"{fmt_money(amt)} in open pipeline maps to this gap")
         elif g["status"] == "partial":
             detail = (f"{PLAY_ACTIONS['partial']}: displace {g['matched_item']} "
                       f"with {g['product_label']} ({cat})")

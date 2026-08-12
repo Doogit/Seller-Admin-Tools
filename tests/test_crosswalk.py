@@ -237,3 +237,25 @@ def test_whitespace_unmeasurable_when_no_product():
     ws = crosswalk.whitespace_estimate(gap_df, pipeline)
     assert ws["unmeasurable"] is True
     assert ws["whitespace_amount"] == 0.0
+
+
+def test_next_action_cites_pipeline_amount():
+    import pandas as pd
+    from core import crosswalk, plan
+    gap_df = pd.DataFrame(
+        [{"obligation_id": "X", "framework": "NERC_CIP", "paraphrase": "p",
+          "capability_category": "siem", "product_label": "Sentinel",
+          "status": "gap", "matched_item": ""}],
+        columns=crosswalk.GAP_COLUMNS,
+    )
+    whitespace = {
+        "whitespace_amount": 100000.0,
+        "matched": pd.DataFrame([{"opportunity_name": "D1", "product": "sentinel",
+                                  "capability_category": "siem", "amount": 100000.0}]),
+        "uncovered": pd.DataFrame(columns=["obligation_id", "capability_category",
+                                           "product_label"]),
+        "unresolved_products": [], "unmeasurable": False,
+    }
+    sections = plan.compose({"account_name": "acme"}, gap_df, whitespace, None)
+    assert any("open pipeline maps to this gap" in a for a in sections["next_actions"])
+    assert any("$100K" in a for a in sections["next_actions"])
