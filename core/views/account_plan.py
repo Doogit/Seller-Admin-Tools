@@ -17,7 +17,7 @@ from __future__ import annotations
 import difflib
 from dataclasses import dataclass
 
-from core import crosswalk, ingest, mapping, plan, schema, store
+from core import crosswalk, mapping, plan, schema, store
 from core.views import common
 
 # --- verbatim strings (inventory §1b) ---------------------------------------
@@ -31,7 +31,7 @@ UNMEASURABLE_WHITESPACE = (
     "No `product` field populated on this account's open pipeline — whitespace "
     "can't be measured (shown as $0, not a true zero). Map the product column on "
     "Home to enable it.")
-REQUIRED_NOT_MAPPED = "Required fields not mapped: "
+REQUIRED_NOT_MAPPED = common.REQUIRED_NOT_MAPPED
 FOOTER = "Draft — review before use. Read-only: nothing is sent anywhere."
 
 # Metric labels (ui.metric strings, ported verbatim).
@@ -42,15 +42,10 @@ METRIC_OBLIGATIONS = "Obligations in scope"
 # Obligation status glyphs (page L146).
 STATUS_EMOJI = {"landed": "🟢", "partial": "🟡", "gap": "🔴"}
 
-# Mapping-grid / date-format affordances (mirrors app/mapping_ui.py).
-NOT_MAPPED = "— not mapped —"
-DATE_FORMAT_LABELS = {
-    "auto": "Auto-detect", "mdy": "US (month/day/year)",
-    "dmy": "International (day/month/year)", "iso": "ISO (yyyy-mm-dd)",
-}
-AMBIGUOUS_DATE_ERROR = (
-    "Every date in this file is ambiguous (e.g. 03/04/2026) — auto-detect cannot "
-    "decide. Choose US or International explicitly.")
+# Mapping-grid / date-format affordances (shared with Home via core.views.common).
+NOT_MAPPED = common.NOT_MAPPED
+DATE_FORMAT_LABELS = common.DATE_FORMAT_LABELS
+AMBIGUOUS_DATE_ERROR = common.AMBIGUOUS_DATE_ERROR
 
 
 def zero_match_warning(display: str) -> str:
@@ -87,58 +82,11 @@ def suggest_facts_mapping(headers: list[str]) -> dict[str, str | None]:
     return mapping.suggest_mapping(headers, schema.ACCOUNT_SCHEMA)
 
 
-def _samples(df, col) -> list[str]:
-    return [str(v) for v in df[col].head(8) if str(v).strip()][:3]
-
-
 def import_preview(df, field_mapping: dict[str, str | None],
                    date_format: str = "auto") -> dict:
-    """Per-field source-column options + live samples, date-format preview, and
-    missing-required — the data behind the reactive upload grid. Pure mirror of
-    mapping_ui.render_mapping_grid + render_date_format_choice."""
-    headers = list(df.columns)
-    options = [NOT_MAPPED] + headers
-    sections = []
-    for title, fields in (("Required fields", schema.ACCOUNT_SCHEMA.required),
-                          ("Optional fields", schema.ACCOUNT_SCHEMA.optional)):
-        rows = []
-        for field, spec in fields.items():
-            col = field_mapping.get(field)
-            rows.append({
-                "field": field,
-                "description": spec["description"],
-                "options": options,
-                "selected": col if col in headers else NOT_MAPPED,
-                "samples": _samples(df, col) if col in headers else [],
-            })
-        sections.append({"title": title, "fields": rows})
-
-    date = _date_preview(df, field_mapping, date_format)
-    missing = [f for f in schema.ACCOUNT_SCHEMA.required if not field_mapping.get(f)]
-    return {"sections": sections, "date": date, "missing_required": missing}
-
-
-def _date_preview(df, field_mapping, date_format) -> dict | None:
-    date_cols = [field_mapping[f] for f in schema.ACCOUNT_SCHEMA.date_fields
-                 if field_mapping.get(f)]
-    if not date_cols:
-        return None
-    out = {"date_format": date_format, "resolved": None, "rows": [], "error": None}
-    sample = df[date_cols[0]].head(20)
-    sample = sample[sample.str.strip() != ""].head(3)
-    try:
-        resolved = date_format
-        if date_format == "auto":
-            resolved = ingest.infer_date_format([df[c] for c in date_cols])
-        parsed, _ = ingest.parse_date_series(sample, resolved)
-        out["resolved"] = resolved
-        out["rows"] = [{"raw": raw, "parsed": p or "unparseable"}
-                       for raw, p in zip(sample, parsed)]
-    except ingest.AmbiguousDateFormat:
-        out["error"] = AMBIGUOUS_DATE_ERROR
-    except ingest.ConflictingDateFormat as e:
-        out["error"] = str(e)
-    return out
+    """Reactive upload-grid model for the account-facts schema (see
+    common.import_preview)."""
+    return common.import_preview(df, field_mapping, schema.ACCOUNT_SCHEMA, date_format)
 
 
 # --- plan view ---------------------------------------------------------------

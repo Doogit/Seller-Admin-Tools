@@ -6,7 +6,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Deps are pinned (FastHTML, Streamlit Home, pandas, python-pptx) and ship manylinux wheels —
+# Deps are pinned (FastHTML, pandas, python-pptx) and ship manylinux wheels —
 # no build toolchain required.
 COPY requirements.txt constraints.txt ./
 RUN pip install --no-cache-dir -r requirements.txt

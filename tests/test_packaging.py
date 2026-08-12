@@ -44,7 +44,7 @@ def test_runtime_config_present():
 
 def test_container_entrypoint_present():
     assert (REPO / "web" / "server.py").exists(), "FastHTML entrypoint moved — update Dockerfile CMD"
-    assert (REPO / "app" / "Home.py").exists(), "Home entrypoint moved — update README quickstart"
+    assert (REPO / "web" / "routes" / "home.py").exists(), "Home route moved — update README quickstart"
 
 
 def test_dockerfile_starts_fasthtml_tools():

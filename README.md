@@ -5,9 +5,8 @@ administrative artifacts an enterprise seller produces by hand every week:
 a forecast narrative, a QBR deck, and an account plan.
 
 Everything runs on one machine. **No authentication, no network calls, no
-telemetry** — data lives in a local SQLite file and Streamlit session state, and
-every export is a local file download. The tools never write back to any CRM or
-external system.
+telemetry** — data lives in a local SQLite file, and every export is a local
+file download. The tools never write back to any CRM or external system.
 
 - **Vendor-neutral core.** No CRM-specific column names are hard-coded anywhere.
   A mapping screen translates *any* CSV export to a canonical schema, so a new
@@ -204,22 +203,18 @@ pip install -r requirements.txt
 python sample_data/seed_snapshots.py
 ```
 
-The three tools (Forecast Narrative, QBR Assembler, Account Plan) run as a local
-[FastHTML](https://fastht.ml) app; **Home** (ingest & column mapping) is a
-separate Streamlit entry:
+All four tools (Pipeline Import, Forecast Narrative, QBR Assembler, Account Plan)
+run as one local [FastHTML](https://fastht.ml) app:
 
 ```bash
-# Build the stylesheet once (and after any UI change), then launch the tools
+# Build the stylesheet once (and after any UI change), then launch the app
 make css                        # or run tools/tailwindcss.exe directly (see Makefile)
 uvicorn web.server:app --host 127.0.0.1   # http://127.0.0.1:8000
-
-# Ingest / column mapping (Home) — Streamlit
-streamlit run app/Home.py
 ```
 
-Then walk the tools in order: **Home** (the sample import is already seeded, or
-upload `sample_data/energy_pipeline_sample.csv` yourself) → **Forecast Narrative**
-→ **QBR Assembler** → **Account Plan**.
+Then walk the tools in order: **Pipeline Import** at `/home` (the sample import is
+already seeded, or upload `sample_data/energy_pipeline_sample.csv` yourself) →
+**Forecast Narrative** → **QBR Assembler** → **Account Plan**.
 
 > The tool app is for **single-user local use** and is bound to loopback
 > (`127.0.0.1`) above. Its Host/Origin guard blocks non-local hosts by default
@@ -233,16 +228,16 @@ upload `sample_data/energy_pipeline_sample.csv` yourself) → **Forecast Narrati
 
 To put the tools on a URL instead of a laptop, `deploy/azure-deploy.ps1` builds a
 container image *inside Azure* (no local Docker) and provisions App Service for
-Containers with the committed sample data baked in — all three tools populated:
+Containers with the committed sample data baked in — the tools populated:
 
 ```powershell
 az login
 ./deploy/azure-deploy.ps1
 ```
 
-It serves the seeded FastHTML tools (Forecast Narrative, QBR Assembler, Account
-Plan) with synthetic data and no auth by default; Home/ingest remains a separate
-local Streamlit entry. See
+It serves the seeded FastHTML tools with synthetic data and no auth by default.
+Pipeline Import is part of the same app; on a hosted URL its writes land in the
+container's ephemeral database (no persistence, no egress). See
 [deploy/README.md](deploy/README.md) for the one-command Entra (Microsoft
 sign-in) gate to add before using real data. The `Dockerfile` also runs anywhere
 Docker does (`docker build -t seller-admin-tools . && docker run -p 8000:8000
@@ -307,23 +302,21 @@ core/         pure logic, no UI:
                 deck, styles                               (tool 2)
                 crosswalk, plan                            (tool 3)
                 views/                                     (per-tool view models)
-web/          FastHTML app for the three tools:
-                server (ASGI), routes/, components, static/ (vendored htmx +
-                built Tailwind)
-app/          Streamlit entry: Home.py (ingest & mapping) + mapping_ui helpers
+web/          FastHTML app for all four tools:
+                server (ASGI), routes/ (incl. home = ingest & mapping),
+                components, static/ (vendored htmx + built Tailwind)
 sample_data/  fictional sample CSVs + seed script
 scripts/      build-only tooling (demo-reel GIF), not a runtime dependency
-tests/        pytest suite (173 tests)
+tests/        pytest suite (197 tests)
 data/         SQLite database (created at runtime, git-ignored)
 ```
 
 The `core/` modules are pure functions over stored snapshots with no UI imports,
-so all logic is exercised headlessly by the test suite. The three tools render
-through a thin FastHTML layer (`web/`) whose view models (`core/views/`) reuse
-the same `core/` functions the exports do — the on-screen numbers and the
-`.pptx`/`.md` downloads cannot disagree. Ingest & column mapping (Home) remain
-a Streamlit entry (`app/`), so the app currently has two UI surfaces over one
-shared core.
+so all logic is exercised headlessly by the test suite. All four tools —
+including Pipeline Import (ingest & column mapping) — render through a thin
+FastHTML layer (`web/`) whose view models (`core/views/`) reuse the same `core/`
+functions the exports do, so the on-screen numbers and the `.pptx`/`.md`
+downloads cannot disagree. A single UI surface over one shared core.
 
 ## Data handling
 
