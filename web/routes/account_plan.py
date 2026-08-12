@@ -94,7 +94,9 @@ def _facts_grid(token: str, preview: dict, date_format: str):
     missing = preview["missing_required"]
     guard = (P(vm.REQUIRED_NOT_MAPPED + ", ".join(missing),
                cls="mt-2 text-sm text-red-700") if missing else "")
-    import_btn = Button("Import account facts", type="button", disabled=bool(missing),
+    date_error = bool(preview["date"] and preview["date"]["error"])
+    import_btn = Button("Import account facts", type="button",
+                        disabled=(bool(missing) or date_error),
                         hx_post=f"{BASE}/facts/import", hx_include="#facts-form",
                         hx_target="#ap-body", hx_swap="outerHTML",
                         hx_sync="this:drop", hx_disabled_elt="this",
@@ -365,8 +367,14 @@ def register(rt):
         mapping = _mapping_from_form(form)
         date_format = form.get("date_format", "auto")
         alias_index = ingest.load_alias_index(ALIASES_PATH)
-        result = importer.import_account_facts(raw, mapping, date_format,
-                                               alias_index=alias_index)
+        try:
+            result = importer.import_account_facts(raw, mapping, date_format,
+                                                   alias_index=alias_index)
+        except (ingest.AmbiguousDateFormat, ingest.ConflictingDateFormat):
+            df = ingest.load_csv(raw)
+            grid = _facts_grid(form["token"], vm.import_preview(df, mapping, date_format),
+                               date_format)
+            return Div(_import_panel(True), Div(grid, cls="mt-2"), id="ap-body")
         if result.blocking:
             df = ingest.load_csv(raw)
             grid = _facts_grid(form["token"], vm.import_preview(df, mapping, date_format),
