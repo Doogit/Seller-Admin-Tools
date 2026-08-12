@@ -202,18 +202,32 @@ pip install -r requirements.txt
 
 # Seed the demo database with two weekly snapshots + sample account facts
 python sample_data/seed_snapshots.py
+```
 
-# Launch the app
+The three tools (Forecast Narrative, QBR Assembler, Account Plan) run as a local
+[FastHTML](https://fastht.ml) app; **Home** (ingest & column mapping) is a
+separate Streamlit entry:
+
+```bash
+# Build the stylesheet once (and after any UI change), then launch the tools
+make css                        # or run tools/tailwindcss.exe directly (see Makefile)
+uvicorn web.server:app --host 127.0.0.1   # http://127.0.0.1:8000
+
+# Ingest / column mapping (Home) — Streamlit
 streamlit run app/Home.py
 ```
 
-Then walk the pages in order: **Home** (the sample import is already seeded, or
+Then walk the tools in order: **Home** (the sample import is already seeded, or
 upload `sample_data/energy_pipeline_sample.csv` yourself) → **Forecast Narrative**
 → **QBR Assembler** → **Account Plan**.
 
-> The screenshots above are the live Streamlit UI running against the bundled
-> sample data, and the `<details>` blocks show real, reproducible export output.
-> Run the commands above to reproduce either.
+> The tool app is for **single-user local use** and is bound to loopback
+> (`127.0.0.1`) above. Its Host/Origin guard blocks non-local hosts by default
+> and checks same-origin state-changing requests; nothing is ever sent off the
+> machine.
+
+> The screenshots above show the tools running against the bundled sample data,
+> and the `<details>` blocks show real, reproducible export output.
 
 ## Run it hosted (Azure App Service)
 
@@ -226,7 +240,9 @@ az login
 ./deploy/azure-deploy.ps1
 ```
 
-It serves synthetic data with no auth by default; see
+It serves the seeded FastHTML tools (Forecast Narrative, QBR Assembler, Account
+Plan) with synthetic data and no auth by default; Home/ingest remains a separate
+local Streamlit entry. See
 [deploy/README.md](deploy/README.md) for the one-command Entra (Microsoft
 sign-in) gate to add before using real data. The `Dockerfile` also runs anywhere
 Docker does (`docker build -t seller-admin-tools . && docker run -p 8000:8000
@@ -290,16 +306,24 @@ core/         pure logic, no UI:
                 forecast, narrative, formatting            (tools 1-2)
                 deck, styles                               (tool 2)
                 crosswalk, plan                            (tool 3)
-app/          Streamlit entry (Home.py) + pages/ + shared render helpers
+                views/                                     (per-tool view models)
+web/          FastHTML app for the three tools:
+                server (ASGI), routes/, components, static/ (vendored htmx +
+                built Tailwind)
+app/          Streamlit entry: Home.py (ingest & mapping) + mapping_ui helpers
 sample_data/  fictional sample CSVs + seed script
 scripts/      build-only tooling (demo-reel GIF), not a runtime dependency
-tests/        pytest suite (100 tests)
+tests/        pytest suite (173 tests)
 data/         SQLite database (created at runtime, git-ignored)
 ```
 
-The `core/` modules are pure functions over stored snapshots with no Streamlit
-imports, so all logic is exercised headlessly by the test suite. The Streamlit
-pages are thin wrappers that call them.
+The `core/` modules are pure functions over stored snapshots with no UI imports,
+so all logic is exercised headlessly by the test suite. The three tools render
+through a thin FastHTML layer (`web/`) whose view models (`core/views/`) reuse
+the same `core/` functions the exports do — the on-screen numbers and the
+`.pptx`/`.md` downloads cannot disagree. Ingest & column mapping (Home) remain
+a Streamlit entry (`app/`), so the app currently has two UI surfaces over one
+shared core.
 
 ## Data handling
 
@@ -321,11 +345,12 @@ pages are thin wrappers that call them.
 python -m pytest
 ```
 
-100 tests cover the ingest/mapping pipeline, forecast analytics (including
+173 tests cover the ingest/mapping pipeline, forecast analytics (including
 week-over-week matching, risk-flag boundaries, the multi-week trend, and
-commit-conversion credibility), deck consistency, the compliance crosswalk, and
-empty/edge-case inputs. Tests use throwaway temp databases and never touch
-`data/agents.db`.
+commit-conversion credibility), deck consistency, the compliance crosswalk, the
+per-tool view models, and the FastHTML routes (golden parity gates hold the
+`.md`/`.pptx` exports byte- and content-stable). Tests use throwaway temp
+databases and never touch `data/agents.db`.
 
 ## Not included (by design)
 

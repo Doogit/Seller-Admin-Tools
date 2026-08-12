@@ -10,3 +10,10 @@ __pycache__/
 /CLAUDE.md
 /CLAUDE.local.md
 .claude/
+
+# Standalone Tailwind CLI binary (~40MB) — download per Makefile; not committed.
+# The BUILT web/static/tailwind.css IS committed so clones run offline.
+/tools/
+
+# FastHTML session-signing secret, generated at runtime. Never commit.
+/.sesskey

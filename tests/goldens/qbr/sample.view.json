@@ -1,0 +1,241 @@
+{
+  "metrics": {
+    "commit": "$8.8M",
+    "upside": "$6.3M",
+    "at_risk": "$750K",
+    "coverage": "—",
+    "commit_delta": null,
+    "upside_delta": null,
+    "derived_note": "Buckets derived from stage — map forecast_category for accuracy.",
+    "unclassified_note": null
+  },
+  "credibility": null,
+  "trend": null,
+  "stage": {
+    "bars": [
+      {
+        "bucket": "early",
+        "amount": 845000.0,
+        "amount_str": "$845K",
+        "pct": 8
+      },
+      {
+        "bucket": "mid",
+        "amount": 10245000.0,
+        "amount_str": "$10.2M",
+        "pct": 100
+      },
+      {
+        "bucket": "late",
+        "amount": 8250000.0,
+        "amount_str": "$8.2M",
+        "pct": 81
+      },
+      {
+        "bucket": "unmapped",
+        "amount": 580000.0,
+        "amount_str": "$580K",
+        "pct": 6
+      }
+    ],
+    "empty": false
+  },
+  "sub_vertical": {
+    "columns": [
+      "sub_vertical",
+      "count",
+      "amount"
+    ],
+    "rows": [
+      {
+        "sub_vertical": "Power & Utilities",
+        "count": 22,
+        "amount": "$8.5M"
+      },
+      {
+        "sub_vertical": "Oil & Gas",
+        "count": 11,
+        "amount": "$6.4M"
+      },
+      {
+        "sub_vertical": "Pipelines",
+        "count": 6,
+        "amount": "$5.0M"
+      }
+    ]
+  },
+  "owner": {
+    "columns": [
+      "owner",
+      "commit",
+      "upside",
+      "pipeline",
+      "deals",
+      "at_risk"
+    ],
+    "rows": [
+      {
+        "owner": "marcus webb",
+        "commit": "$3.9M",
+        "upside": "$2.1M",
+        "pipeline": "$1.6M",
+        "deals": 11,
+        "at_risk": "$750K"
+      },
+      {
+        "owner": "kevin dugas",
+        "commit": "$2.2M",
+        "upside": "$640K",
+        "pipeline": "$825K",
+        "deals": 7,
+        "at_risk": "$0"
+      },
+      {
+        "owner": "elena rodriguez",
+        "commit": "$2.1M",
+        "upside": "$2.6M",
+        "pipeline": "$835K",
+        "deals": 10,
+        "at_risk": "$0"
+      },
+      {
+        "owner": "priya sharma",
+        "commit": "$525K",
+        "upside": "$1.0M",
+        "pipeline": "$1.6M",
+        "deals": 11,
+        "at_risk": "$0"
+      }
+    ],
+    "empty_text": null
+  },
+  "top": {
+    "columns": [
+      "opportunity_name",
+      "account_name",
+      "stage",
+      "amount",
+      "close_date",
+      "owner",
+      "flags"
+    ],
+    "rows": [
+      {
+        "opportunity_name": "Pipeline SCADA Security",
+        "account_name": "transcanyon pipelines",
+        "stage": "04 Commit",
+        "amount": "$2.1M",
+        "close_date": "2026-08-28",
+        "owner": "elena rodriguez",
+        "flags": ""
+      },
+      {
+        "opportunity_name": "Offshore Platform Monitoring",
+        "account_name": "gulfstream petroleum",
+        "stage": "04 Commit",
+        "amount": "$1.8M",
+        "close_date": "2026-08-21",
+        "owner": "marcus webb",
+        "flags": ""
+      },
+      {
+        "opportunity_name": "Grid Modernization Security",
+        "account_name": "meridian energy",
+        "stage": "04 Commit",
+        "amount": "$1.2M",
+        "close_date": "2026-09-25",
+        "owner": "kevin dugas",
+        "flags": ""
+      },
+      {
+        "opportunity_name": "SOC Co-Managed Service",
+        "account_name": "voltaic grid systems",
+        "stage": "04 Commit",
+        "amount": "$1.1M",
+        "close_date": "2026-08-27",
+        "owner": "marcus webb",
+        "flags": ""
+      },
+      {
+        "opportunity_name": "Drilling Ops Endpoint Protection",
+        "account_name": "ironpeak oil",
+        "stage": "04 Commit",
+        "amount": "$1.0M",
+        "close_date": "2026-08-26",
+        "owner": "marcus webb",
+        "flags": ""
+      },
+      {
+        "opportunity_name": "Terminal OT Visibility",
+        "account_name": "redrock midstream",
+        "stage": "04 Commit",
+        "amount": "$980K",
+        "close_date": "2026-09-29",
+        "owner": "kevin dugas",
+        "flags": ""
+      },
+      {
+        "opportunity_name": "Control Room Zero Trust",
+        "account_name": "transcanyon pipelines",
+        "stage": "03 Propose",
+        "amount": "$880K",
+        "close_date": "2026-09-23",
+        "owner": "elena rodriguez",
+        "flags": ""
+      },
+      {
+        "opportunity_name": "SIEM Migration",
+        "account_name": "ironpeak oil",
+        "stage": "03 Propose",
+        "amount": "$820K",
+        "close_date": "2026-09-17",
+        "owner": "marcus webb",
+        "flags": ""
+      },
+      {
+        "opportunity_name": "Identity Consolidation",
+        "account_name": "gulfstream petroleum",
+        "stage": "03 Propose",
+        "amount": "$750K",
+        "close_date": "2026-09-18",
+        "owner": "marcus webb",
+        "flags": "no_sponsor"
+      },
+      {
+        "opportunity_name": "TSA Directive Gap Closure",
+        "account_name": "transcanyon pipelines",
+        "stage": "02 Develop",
+        "amount": "$690K",
+        "close_date": "2026-11-20",
+        "owner": "elena rodriguez",
+        "flags": ""
+      }
+    ]
+  },
+  "risk": {
+    "notes": [
+      "Note: slipped: no prior snapshot — rule skipped."
+    ],
+    "columns": [
+      "rule",
+      "opportunity_name",
+      "account_name",
+      "owner",
+      "amount",
+      "evidence",
+      "suggested ask"
+    ],
+    "rows": [
+      {
+        "rule": "no_sponsor",
+        "opportunity_name": "Identity Consolidation",
+        "account_name": "gulfstream petroleum",
+        "owner": "marcus webb",
+        "amount": "$750K",
+        "evidence": "no exec sponsor on a $750K deal (flags at $500K)",
+        "suggested ask": "Name the exec sponsor and the plan to engage them this week."
+      }
+    ],
+    "empty_text": null
+  }
+}

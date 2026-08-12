@@ -1,0 +1,60 @@
+{
+  "slides": [
+    [
+      "Account plan — Meridian Energy",
+      "• Sub-vertical: Power & Utilities\n• Annual spend: $1.2M\n• Agreement ends: 2027-06-30\n• Regulatory scope: NERC_CIP, state_puc\n• Open pipeline: 4 opportunities, $2.4M\n• Installed: Microsoft Sentinel; Entra ID\n• Incumbents: CrowdStrike",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Obligation → capability → gap",
+      "Obligation",
+      "Capability",
+      "Product",
+      "Status",
+      "CIP-005-7-R1",
+      "ot_security",
+      "Defender for OT",
+      "gap",
+      "CIP-005-7-R2",
+      "identity",
+      "Entra",
+      "landed",
+      "CIP-007-6-R2",
+      "patch_mgmt",
+      "Intune / Azure Update Manager",
+      "gap",
+      "CIP-007-6-R3",
+      "endpoint_protection",
+      "Defender for Endpoint",
+      "partial",
+      "CIP-007-6-R4",
+      "siem",
+      "Sentinel",
+      "landed",
+      "CIP-010-4-R1",
+      "patch_mgmt",
+      "Intune / Azure Update Manager",
+      "gap",
+      "CIP-010-4-R3",
+      "patch_mgmt",
+      "Defender Vulnerability Manage…",
+      "gap",
+      "CIP-011-3-R1",
+      "data_protection",
+      "Purview",
+      "gap",
+      "DRAFT — generated locally; review before presenting",
+      "Reference data — verify against current standard text before customer use."
+    ],
+    [
+      "Open pipeline & whitespace",
+      "• Whitespace vs gap capabilities: $820K\n• Grid Modernization Security — 04 Commit, $1.2M\n• OT Threat Monitoring — 03 Propose, $640K\n• Purview Data Map — 01 Qualify, $180K\n• Endpoint Fleet Upgrade — 02 Develop, $295K\n• Uncovered gaps (no play exists yet): patch_mgmt",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Next actions",
+      "• Pursue open pipeline: ot_security (Defender for OT) — $640K in open pipeline maps to this gap\n• Expand / renew: Entra landed (identity)\n• New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet\n• Displacement play: displace CrowdStrike with Defender for Endpoint (endpoint_protection)\n• Expand / renew: Sentinel landed (siem)\n• Pursue open pipeline: data_protection (Purview) — $180K in open pipeline maps to this gap\n• (fill in — relationship map stays human)",
+      "DRAFT — generated locally; review before presenting"
+    ]
+  ]
+}

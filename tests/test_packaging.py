@@ -42,8 +42,15 @@ def test_runtime_config_present():
         assert (REPO / rel).exists(), f"config {rel} the app reads at runtime is missing"
 
 
-def test_dashboard_entrypoint_present():
-    assert (REPO / "app" / "Home.py").exists(), "entrypoint moved — update Dockerfile CMD"
+def test_container_entrypoint_present():
+    assert (REPO / "web" / "server.py").exists(), "FastHTML entrypoint moved — update Dockerfile CMD"
+    assert (REPO / "app" / "Home.py").exists(), "Home entrypoint moved — update README quickstart"
+
+
+def test_dockerfile_starts_fasthtml_tools():
+    text = _dockerfile_text()
+    assert "uvicorn web.server:app" in text
+    assert "SELLER_ADMIN_TOOLS_ALLOW_REMOTE=1" in text
 
 
 def test_dockerfile_and_deploy_agree_on_port():

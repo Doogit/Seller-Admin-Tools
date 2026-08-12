@@ -31,8 +31,9 @@ Tear everything down with `az group delete -n rg-seller-admin-tools --yes`.
 By default the app is **open** and shows **synthetic** sample data (fictional
 energy companies, no PII) — appropriate for a demo you can hand someone a link
 to. It is *not* appropriate for real pipeline data until you put sign-in in
-front of it. All three tools (Forecast Narrative, QBR Assembler, Account Plan)
-are populated from the baked sample data.
+front of it. The hosted image serves the seeded FastHTML tools (Forecast
+Narrative, QBR Assembler, Account Plan); Home/ingest remains a separate local
+Streamlit entry.
 
 ### Add Entra sign-in (before using real data)
 
