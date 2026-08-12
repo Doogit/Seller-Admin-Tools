@@ -1,0 +1,160 @@
+{
+  "account_display": "Meridian Energy",
+  "summary": [
+    "Sub-vertical: Power & Utilities",
+    "Annual spend: $1.2M",
+    "Agreement ends: 2027-06-30",
+    "Regulatory scope: NERC_CIP, state_puc",
+    "Open pipeline: 0 opportunities, $0"
+  ],
+  "metrics": {
+    "whitespace": "$0",
+    "uncovered": 5,
+    "obligations": 8
+  },
+  "gaps": {
+    "columns": [
+      "obligation_id",
+      "framework",
+      "paraphrase",
+      "capability_category",
+      "product_label",
+      "status",
+      "matched_item"
+    ],
+    "rows": [
+      {
+        "obligation_id": "CIP-005-7-R1",
+        "framework": "NERC_CIP",
+        "paraphrase": "Establish electronic security perimeters around BES cyber systems.",
+        "capability_category": "ot_security",
+        "product_label": "Defender for OT",
+        "status": "🔴 gap",
+        "matched_item": ""
+      },
+      {
+        "obligation_id": "CIP-005-7-R2",
+        "framework": "NERC_CIP",
+        "paraphrase": "Control and monitor interactive remote access to BES cyber systems.",
+        "capability_category": "identity",
+        "product_label": "Entra",
+        "status": "🟢 landed",
+        "matched_item": "Entra ID"
+      },
+      {
+        "obligation_id": "CIP-007-6-R2",
+        "framework": "NERC_CIP",
+        "paraphrase": "Evaluate and apply security patches on a defined cadence.",
+        "capability_category": "patch_mgmt",
+        "product_label": "Intune / Azure Update Manager",
+        "status": "🔴 gap",
+        "matched_item": ""
+      },
+      {
+        "obligation_id": "CIP-007-6-R3",
+        "framework": "NERC_CIP",
+        "paraphrase": "Deter, detect, and prevent malicious code on applicable systems.",
+        "capability_category": "endpoint_protection",
+        "product_label": "Defender for Endpoint",
+        "status": "🟡 partial",
+        "matched_item": "CrowdStrike"
+      },
+      {
+        "obligation_id": "CIP-007-6-R4",
+        "framework": "NERC_CIP",
+        "paraphrase": "Log, monitor, and review security events on applicable systems.",
+        "capability_category": "siem",
+        "product_label": "Sentinel",
+        "status": "🟢 landed",
+        "matched_item": "Microsoft Sentinel"
+      },
+      {
+        "obligation_id": "CIP-010-4-R1",
+        "framework": "NERC_CIP",
+        "paraphrase": "Track and authorize configuration changes with baseline documentation.",
+        "capability_category": "patch_mgmt",
+        "product_label": "Intune / Azure Update Manager",
+        "status": "🔴 gap",
+        "matched_item": ""
+      },
+      {
+        "obligation_id": "CIP-010-4-R3",
+        "framework": "NERC_CIP",
+        "paraphrase": "Perform periodic vulnerability assessments of applicable systems.",
+        "capability_category": "patch_mgmt",
+        "product_label": "Defender Vulnerability Management",
+        "status": "🔴 gap",
+        "matched_item": ""
+      },
+      {
+        "obligation_id": "CIP-011-3-R1",
+        "framework": "NERC_CIP",
+        "paraphrase": "Identify and protect BES cyber system information in storage and transit.",
+        "capability_category": "data_protection",
+        "product_label": "Purview",
+        "status": "🔴 gap",
+        "matched_item": ""
+      }
+    ],
+    "empty_text": null
+  },
+  "uncovered": {
+    "rows": [
+      {
+        "obligation_id": "CIP-005-7-R1",
+        "capability_category": "ot_security",
+        "product_label": "Defender for OT"
+      },
+      {
+        "obligation_id": "CIP-007-6-R2",
+        "capability_category": "patch_mgmt",
+        "product_label": "Intune / Azure Update Manager"
+      },
+      {
+        "obligation_id": "CIP-010-4-R1",
+        "capability_category": "patch_mgmt",
+        "product_label": "Intune / Azure Update Manager"
+      },
+      {
+        "obligation_id": "CIP-010-4-R3",
+        "capability_category": "patch_mgmt",
+        "product_label": "Defender Vulnerability Management"
+      },
+      {
+        "obligation_id": "CIP-011-3-R1",
+        "capability_category": "data_protection",
+        "product_label": "Purview"
+      }
+    ]
+  },
+  "unresolved": {
+    "products": [],
+    "categories": [
+      "data_protection",
+      "endpoint_protection",
+      "identity",
+      "ot_security",
+      "patch_mgmt",
+      "siem"
+    ]
+  },
+  "pipeline": {
+    "columns": [],
+    "rows": []
+  },
+  "next_actions": [
+    "New capability play: ot_security (Defender for OT) — no pipeline exists yet",
+    "Expand / renew: Entra landed (identity)",
+    "New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet",
+    "Displacement play: displace CrowdStrike with Defender for Endpoint (endpoint_protection)",
+    "Expand / renew: Sentinel landed (siem)",
+    "New capability play: data_protection (Purview) — no pipeline exists yet"
+  ],
+  "relationship_map": "(fill in — relationship map stays human)",
+  "warnings": [
+    "regulatory_scope 'state_puc' has no reference obligations shipped — add entries to config/obligation_map.yaml."
+  ],
+  "zero_match": null,
+  "disclaimer": "Reference data — verify against current standard text before customer use.",
+  "safe_name": "meridian_energy"
+}

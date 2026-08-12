@@ -1,0 +1,72 @@
+{
+  "slides": [
+    [
+      "Account plan — Cascade Power & Light",
+      "• Sub-vertical: Power & Utilities\n• Annual spend: $450K\n• Agreement ends: 2026-09-30\n• Regulatory scope: NERC_CIP, IEC_62443\n• Open pipeline: 3 opportunities, $1.1M\n• Installed: (none)\n• Incumbents: (none)",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Obligation → capability → gap",
+      "Obligation",
+      "Capability",
+      "Product",
+      "Status",
+      "CIP-005-7-R1",
+      "ot_security",
+      "Defender for OT",
+      "gap",
+      "CIP-005-7-R2",
+      "identity",
+      "Entra",
+      "gap",
+      "CIP-007-6-R2",
+      "patch_mgmt",
+      "Intune / Azure Update Manager",
+      "gap",
+      "CIP-007-6-R3",
+      "endpoint_protection",
+      "Defender for Endpoint",
+      "gap",
+      "CIP-007-6-R4",
+      "siem",
+      "Sentinel",
+      "gap",
+      "CIP-010-4-R1",
+      "patch_mgmt",
+      "Intune / Azure Update Manager",
+      "gap",
+      "CIP-010-4-R3",
+      "patch_mgmt",
+      "Defender Vulnerability Manage…",
+      "gap",
+      "CIP-011-3-R1",
+      "data_protection",
+      "Purview",
+      "gap",
+      "IEC-62443-3-3-SR1",
+      "identity",
+      "Entra",
+      "gap",
+      "IEC-62443-3-3-SR3",
+      "endpoint_protection",
+      "Defender for Endpoint",
+      "gap",
+      "IEC-62443-3-3-SR6",
+      "siem",
+      "Sentinel",
+      "gap",
+      "DRAFT — generated locally; review before presenting",
+      "Reference data — verify against current standard text before customer use."
+    ],
+    [
+      "Open pipeline & whitespace",
+      "• Whitespace vs gap capabilities: $1.1M\n• SOC Modernization — 02 Develop, $480K\n• Field Device Hardening — 03 Propose, $525K\n• Emergency Ops Identity — 01 Qualify, $72K\n• Uncovered gaps (no play exists yet): patch_mgmt, endpoint_protection, data_protection",
+      "DRAFT — generated locally; review before presenting"
+    ],
+    [
+      "Next actions",
+      "• Pursue open pipeline: ot_security (Defender for OT)\n• Pursue open pipeline: identity (Entra)\n• New capability play: patch_mgmt (Intune / Azure Update Manager) — no pipeline exists yet\n• New capability play: endpoint_protection (Defender for Endpoint) — no pipeline exists yet\n• Pursue open pipeline: siem (Sentinel)\n• New capability play: data_protection (Purview) — no pipeline exists yet\n• (fill in — relationship map stays human)",
+      "DRAFT — generated locally; review before presenting"
+    ]
+  ]
+}
