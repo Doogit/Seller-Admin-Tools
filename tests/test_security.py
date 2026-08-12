@@ -1,6 +1,6 @@
 """LocalOnlyMiddleware: loopback Host + same-origin mutating requests.
 
-Pure-ASGI tests — no TestClient/httpx dependency, no event loop plugin. Each
+Pure-ASGI tests - no TestClient/httpx dependency, no event loop plugin. Each
 case drives the middleware directly with a crafted scope and captures the status.
 """
 
@@ -19,11 +19,16 @@ async def _inner_app(scope, receive, send):
     await send({"type": "http.response.body", "body": b"ok"})
 
 
-def _status(method: str = "GET", host: str = OK_HOST, headers: dict | None = None) -> int:
+def _status(
+    method: str = "GET",
+    host: str = OK_HOST,
+    headers: dict | None = None,
+    scheme: str = "http",
+) -> int:
     raw = [(b"host", host.encode())]
     for k, v in (headers or {}).items():
         raw.append((k.encode(), v.encode()))
-    scope = {"type": "http", "method": method, "path": "/", "headers": raw}
+    scope = {"type": "http", "method": method, "path": "/", "scheme": scheme, "headers": raw}
     sent: list[dict] = []
 
     async def send(msg):
@@ -58,10 +63,15 @@ def test_post_cross_site_origin_blocked():
     assert _status("POST", host=OK_HOST, headers={"origin": "http://evil.example.com"}) == 403
 
 
+def test_post_from_different_loopback_origin_blocked():
+    assert _status("POST", host=OK_HOST, headers={"origin": "http://127.0.0.1:5002"}) == 403
+    assert _status("POST", host=OK_HOST, headers={"origin": "http://localhost:5001"}) == 403
+
+
 def test_post_without_origin_blocked():
     # Browsers send Origin on state-changing requests; its absence is untrusted.
     assert _status("POST", host=OK_HOST) == 403
 
 
 def test_post_falls_back_to_referer():
-    assert _status("POST", host=OK_HOST, headers={"referer": "http://localhost:5001/x"}) == 200
+    assert _status("POST", host=OK_HOST, headers={"referer": "http://127.0.0.1:5001/x"}) == 200

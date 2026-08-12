@@ -1,7 +1,7 @@
 name: security-audit
 
 # Dependency vulnerability gate. Runs pip-audit against the declared requirements
-# (a fresh resolve, so it reflects requirements.txt + constraints.txt, not a
+# (a fresh resolve, so it reflects requirements.txt and its constraints, not a
 # drifted local venv) plus the test suite. Fails the build on any known advisory.
 
 on:
@@ -23,9 +23,8 @@ jobs:
       - name: Install pip-audit
         run: python -m pip install --upgrade pip pip-audit
       - name: Audit declared dependencies
-        # A fresh resolve of requirements.txt (reflects current patched transitives,
-        # not a drifted local venv). constraints.txt is enforced at install time in
-        # the tests job below; pip-audit resolves independently.
+        # requirements.txt includes constraints.txt, so the audit resolves the same
+        # patched dependency floor set used by installs.
         run: python -m pip_audit -r requirements.txt --strict
 
   tests:
@@ -36,6 +35,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install
-        run: python -m pip install -c constraints.txt -r requirements.txt
+        run: python -m pip install -r requirements.txt
       - name: Test
         run: python -m pytest -q
