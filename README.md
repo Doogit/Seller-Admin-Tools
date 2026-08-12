@@ -11,13 +11,26 @@ external system.
 
 - **Vendor-neutral core.** No CRM-specific column names are hard-coded anywhere.
   A mapping screen translates *any* CSV export to a canonical schema, so a new
-  export format is a 30-second remap, not a code change.
-- **Deterministic.** Given the same snapshot, every tool produces byte-identical
-  output. The QBR deck and the forecast narrative read the same analytics
-  functions, so their numbers can never disagree.
+  export format is a remap, not a code change.
+- **Deterministic analytics.** Given the same snapshot, every tool computes the
+  same numbers on every run. The QBR deck and the forecast narrative read the
+  same `core/forecast` functions, so their figures can never disagree — a
+  consistency test rebuilds the deck and parses the commit figure back out to
+  prove it. (The exported `.pptx`/`.md` files are drafts stamped with the build
+  date, not reproducible binaries — it's the underlying numbers that are fixed.)
 - **Config-not-code.** Stage maps, name aliases, risk rules, narrative templates,
   and the compliance crosswalk all live in editable YAML under `config/`, read
   at call time.
+
+---
+
+## Demo
+
+The four tools end to end, scrolling through each page. This GIF is generated
+from the stills in `docs/screenshots/` by `scripts/build_demo_reel.py`, so it
+stays in sync with them (CI rebuilds it whenever the screenshots change).
+
+![Demo reel scrolling through the four tools](docs/demo-reel.gif)
 
 ---
 
@@ -234,9 +247,10 @@ If you are weighing this against a commercial suite:
 - **Cost of operation.** Zero infrastructure. It runs on one machine, fully
   offline — no accounts, API keys, per-seat licensing, or network egress. The
   only cost is a Python environment.
-- **Auditability.** Every output is **deterministic** (same snapshot → byte-
-  identical output; a test parses the commit figure back out of the built deck
-  and asserts it equals the narrative's). Every risk flag carries a plain-English
+- **Auditability.** Every analytic number is deterministic for a given snapshot;
+  the exported `.pptx`/`.md` files are date-stamped drafts, not reproducible
+  binaries. A test parses the commit figure back out of the built deck and
+  asserts it equals the narrative's. Every risk flag carries a plain-English
   evidence string *including the firing threshold*, and all numbers are inserted
   verbatim — there is no model deciding them. Snapshots are append-only and
   keyed by file hash, so re-importing the same file is caught.
@@ -261,6 +275,7 @@ core/         pure logic, no UI:
                 crosswalk, plan                            (tool 3)
 app/          Streamlit entry (Home.py) + pages/ + shared render helpers
 sample_data/  fictional sample CSVs + seed script
+scripts/      build-only tooling (demo-reel GIF), not a runtime dependency
 tests/        pytest suite (100 tests)
 data/         SQLite database (created at runtime, git-ignored)
 ```
