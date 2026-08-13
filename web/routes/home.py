@@ -152,11 +152,17 @@ def _stage_block(stage: dict | None):
                Div(*cards, cls="mt-1 grid gap-2 sm:grid-cols-3"))
 
 
+def _blocking_line(text):
+    # "Blocked" word marks severity textually, so a blocker is distinguishable
+    # from a warning without relying on hue alone (both are status-colored).
+    return P(Span("Blocked", cls="mr-1.5 font-semibold uppercase tracking-wide"),
+             text, cls="mt-1 text-sm text-high-ink")
+
+
 def _validation_block(v: dict):
     if v["error"]:
-        return Div(H3("Validation", cls=f"mt-4 {_H2}"),
-                   P(v["error"], cls="mt-1 text-sm text-high-ink"))
-    body = [P(b, cls="mt-1 text-sm text-high-ink") for b in v["blocking"]]
+        return Div(H3("Validation", cls=f"mt-4 {_H2}"), _blocking_line(v["error"]))
+    body = [_blocking_line(b) for b in v["blocking"]]
     if v["warnings"]:
         body.append(Details(
             Summary(f"{len(v['warnings'])} warning(s) — rows import as-is",

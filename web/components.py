@@ -102,14 +102,26 @@ def metric_cards(metrics: dict):
     return Div(cards, *notes)
 
 
-def _chip(text: str):
+# Okabe-Ito status tones -> (dot, tint background, ink text) utility classes.
+# Literal strings so Tailwind's content scan tree-shakes them (no interpolation).
+_CHIP_TONES = {
+    "high": ("bg-high", "bg-high-tint", "text-high-ink"),
+    "medium": ("bg-medium", "bg-medium-tint", "text-medium-ink"),
+    "positive": ("bg-positive", "bg-positive-tint", "text-positive-ink"),
+}
+
+
+def _chip(text: str, tone: str = "high"):
     """Status chip: tinted background + a colored dot + the literal status word,
-    so meaning is never carried by color alone (colorblind-safe)."""
+    so meaning is never carried by color alone (colorblind-safe). `tone` selects
+    the Okabe-Ito status color; it defaults to high — the risk/exception tables,
+    where every row is a genuine risk flag."""
+    dot, tint, ink = _CHIP_TONES.get(tone, _CHIP_TONES["high"])
     return Span(
-        Span(cls="mr-1.5 inline-block h-1.5 w-1.5 rounded-sm bg-high"),
+        Span(cls=f"mr-1.5 inline-block h-1.5 w-1.5 rounded-sm {dot}"),
         text,
-        cls="inline-flex items-center rounded-full bg-high-tint px-2 py-0.5 "
-            "text-xs font-semibold text-high-ink",
+        cls=f"inline-flex items-center rounded-full {tint} px-2 py-0.5 "
+            f"text-xs font-semibold {ink}",
     )
 
 
@@ -119,14 +131,16 @@ def _is_numeric(val: str) -> bool:
 
 
 def data_table(columns, rows, empty_text: str | None = None,
-               chip_col: str | None = None):
+               chip_col: str | None = None, chip_tone: dict | None = None):
     """Generic read-only table from view-model columns + row dicts. Rows are
     pre-formatted in the view model (amounts money-formatted). Scrolls
     horizontally on narrow screens; never overflows the page.
 
     Money/count columns right-align with tabular figures so magnitudes compare
     down the column; the optional chip_col renders its value as a status chip
-    (used by the risk/exception tables). No view-model string is altered."""
+    (used by the risk/exception tables). chip_tone optionally maps a cell value
+    to an Okabe-Ito tone (else every chip is high). No view-model string is
+    altered."""
     if not rows:
         return P(empty_text or "", cls="text-sm text-muted")
     numeric = {c: any(_is_numeric(r.get(c, "")) for r in rows) for c in columns}
@@ -139,7 +153,9 @@ def data_table(columns, rows, empty_text: str | None = None,
 
     def _td(c, r):
         if chip_col and c == chip_col:
-            return Td(_chip(str(r.get(c, ""))), cls="px-3 py-2 align-top")
+            val = str(r.get(c, ""))
+            return Td(_chip(val, (chip_tone or {}).get(val, "high")),
+                      cls="px-3 py-2 align-top")
         align = " text-right tabular-nums" if numeric[c] else ""
         return Td(str(r.get(c, "")), cls=f"px-3 py-2 align-top{align}")
 

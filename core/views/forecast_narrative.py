@@ -55,8 +55,9 @@ def _unmatched(deltas: pd.DataFrame | None) -> dict:
     if deltas is None:
         return {"n": 0, "warning": None}
     n = int((deltas["change_type"] == "unmatched").sum())
-    warning = (f"{n} opportunities couldn't be matched to last week — "
-               "renamed or ID missing? See the movement table.") if n else None
+    warning = (f"{n} opportunit{'y' if n == 1 else 'ies'} couldn't be matched "
+               "to last week — renamed or ID missing? See the movement "
+               "table.") if n else None
     return {"n": n, "warning": warning}
 
 
