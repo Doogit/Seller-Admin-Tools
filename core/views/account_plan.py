@@ -40,7 +40,9 @@ METRIC_UNCOVERED = "Uncovered gaps (no play yet)"
 METRIC_OBLIGATIONS = "Obligations in scope"
 
 # Obligation status glyphs (page L146).
-STATUS_EMOJI = {"landed": "🟢", "partial": "🟡", "gap": "🔴"}
+# Gap status -> Okabe-Ito chip tone for the web gap table (the .md/.pptx exports
+# keep the bare status word). landed = good, gap = exposure, partial = between.
+GAP_TONES = {"landed": "positive", "partial": "medium", "gap": "high"}
 
 # Mapping-grid / date-format affordances (shared with Home via core.views.common).
 NOT_MAPPED = common.NOT_MAPPED
@@ -116,9 +118,10 @@ def safe_name(display: str) -> str:
 def _gaps_block(gaps) -> dict:
     if gaps.empty:
         return {"columns": [], "rows": [], "empty_text": NO_OBLIGATIONS}
-    display = gaps.copy()
-    display["status"] = display["status"].map(lambda s: f"{STATUS_EMOJI[s]} {s}")
-    return {"columns": list(display.columns), "rows": common.table_rows(display),
+    # status stays the bare word ("gap"/"partial"/"landed"); the web renders it
+    # as a colorblind-safe status chip toned by GAP_TONES, the .md/.pptx keep the
+    # word. (Was a color-only 🔴/🟡/🟢 glyph — inconsistent with the chip system.)
+    return {"columns": list(gaps.columns), "rows": common.table_rows(gaps),
             "empty_text": None}
 
 

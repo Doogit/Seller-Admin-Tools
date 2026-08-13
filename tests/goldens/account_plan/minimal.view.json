@@ -30,7 +30,7 @@
         "paraphrase": "Establish electronic security perimeters around BES cyber systems.",
         "capability_category": "ot_security",
         "product_label": "Defender for OT",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -39,7 +39,7 @@
         "paraphrase": "Control and monitor interactive remote access to BES cyber systems.",
         "capability_category": "identity",
         "product_label": "Entra",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -48,7 +48,7 @@
         "paraphrase": "Evaluate and apply security patches on a defined cadence.",
         "capability_category": "patch_mgmt",
         "product_label": "Intune / Azure Update Manager",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -57,7 +57,7 @@
         "paraphrase": "Deter, detect, and prevent malicious code on applicable systems.",
         "capability_category": "endpoint_protection",
         "product_label": "Defender for Endpoint",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -66,7 +66,7 @@
         "paraphrase": "Log, monitor, and review security events on applicable systems.",
         "capability_category": "siem",
         "product_label": "Sentinel",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -75,7 +75,7 @@
         "paraphrase": "Track and authorize configuration changes with baseline documentation.",
         "capability_category": "patch_mgmt",
         "product_label": "Intune / Azure Update Manager",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -84,7 +84,7 @@
         "paraphrase": "Perform periodic vulnerability assessments of applicable systems.",
         "capability_category": "patch_mgmt",
         "product_label": "Defender Vulnerability Management",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -93,7 +93,7 @@
         "paraphrase": "Identify and protect BES cyber system information in storage and transit.",
         "capability_category": "data_protection",
         "product_label": "Purview",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -102,7 +102,7 @@
         "paraphrase": "Identify and authenticate all users and devices in the control system.",
         "capability_category": "identity",
         "product_label": "Entra",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -111,7 +111,7 @@
         "paraphrase": "Ensure integrity of control system software and information.",
         "capability_category": "endpoint_protection",
         "product_label": "Defender for Endpoint",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       },
       {
@@ -120,7 +120,7 @@
         "paraphrase": "Respond to security violations in a timely manner with event collection.",
         "capability_category": "siem",
         "product_label": "Sentinel",
-        "status": "🔴 gap",
+        "status": "gap",
         "matched_item": ""
       }
     ],

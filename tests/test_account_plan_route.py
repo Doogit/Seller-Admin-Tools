@@ -127,6 +127,20 @@ def test_plan_fragment_for_selected_account(env, client):
     assert 'id="plan"' in r.text
 
 
+def test_gap_status_renders_toned_chips_not_emoji(env, client):
+    # Meridian has a landed/partial/gap mix -> each status is a colorblind-safe
+    # chip toned per GAP_TONES (positive/medium/high), never a color-only glyph.
+    sid = _seed(env["db"])
+    r = client.get(f"{BASE}/plan",
+                   params={"account_name": "meridian energy", "snapshot_id": str(sid)})
+    assert r.status_code == 200
+    for glyph in ("🔴", "🟡", "🟢"):
+        assert glyph not in r.text
+    assert "bg-positive-tint" in r.text  # landed -> positive
+    assert "bg-medium-tint" in r.text    # partial -> medium
+    assert "bg-high-tint" in r.text      # gap -> high
+
+
 def test_plan_fragment_resolves_stale_query_values(env, client):
     _seed(env["db"])
     r = client.get(f"{BASE}/plan",

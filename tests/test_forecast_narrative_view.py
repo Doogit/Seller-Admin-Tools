@@ -3,6 +3,8 @@ parity golden). Exercises happy path, missing-optional degradation, empty data,
 and each conditional note, asserting the exact user-facing strings the route
 renders verbatim."""
 
+import pandas as pd
+
 import forecast_narrative_fixtures as fx
 
 from core import forecast
@@ -32,6 +34,15 @@ def test_full_unmatched_warning(db_path):
     assert v.unmatched["n"] == 2
     assert v.unmatched["warning"] == (
         "2 opportunities couldn't be matched to last week — "
+        "renamed or ID missing? See the movement table."
+    )
+
+
+def test_singular_unmatched_warning():
+    # n=1 is the bug the plural fix targets: "1 opportunity", not "opportunities"
+    w = vm._unmatched(pd.DataFrame({"change_type": ["unmatched"]}))["warning"]
+    assert w == (
+        "1 opportunity couldn't be matched to last week — "
         "renamed or ID missing? See the movement table."
     )
 

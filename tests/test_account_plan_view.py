@@ -14,11 +14,10 @@ def test_full_scenario_plan(db_path):
     v = vm.build(sc.account_name, sc.snapshot_id, db_path=db_path)
     assert v.account_display == "Meridian Energy"
     assert v.metrics == {"whitespace": "$820,000", "uncovered": 3, "obligations": 8}
-    # landed/partial/gap mix present, each status glyph-prefixed
+    # landed/partial/gap mix present as bare status words (the web tones them
+    # into colorblind-safe chips via GAP_TONES; the .md/.pptx keep the word)
     statuses = {r["status"] for r in v.gaps["rows"]}
-    assert any(s.startswith("🟢") for s in statuses)   # landed
-    assert any(s.startswith("🟡") for s in statuses)   # partial
-    assert any(s.startswith("🔴") for s in statuses)   # gap
+    assert {"landed", "partial", "gap"} <= statuses
     assert v.gaps["empty_text"] is None
     assert v.pipeline["rows"] and "amount" in v.pipeline["columns"]
     assert v.zero_match is None
@@ -50,7 +49,7 @@ def test_minimal_all_gap(db_path):
     v = vm.build(sc.account_name, sc.snapshot_id, db_path=db_path)
     assert v.account_display == "Cascade Power & Light"
     # empty footprint -> no landed/partial, everything is a gap
-    assert all(r["status"].startswith("🔴") for r in v.gaps["rows"])
+    assert all(r["status"] == "gap" for r in v.gaps["rows"])
     assert v.gaps["empty_text"] is None
 
 

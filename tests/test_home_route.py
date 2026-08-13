@@ -57,6 +57,21 @@ def _confirm_data(token, raw, **overrides):
     return data
 
 
+def test_blocking_lines_carry_blocked_marker():
+    # blocker vs warning must be distinguishable by a literal word, not hue alone
+    from fasthtml.common import to_xml
+    err = to_xml(route._validation_block(
+        {"error": "Every slash-form date is ambiguous.", "blocking": [], "warnings": []}))
+    assert ">Blocked</span>" in err
+    blk = to_xml(route._validation_block(
+        {"error": None, "blocking": ["Amount column not mapped."], "warnings": []}))
+    assert ">Blocked</span>" in blk
+    # warnings-only path stays a details/summary — no Blocked marker
+    warn = to_xml(route._validation_block(
+        {"error": None, "blocking": [], "warnings": ["3 rows lack opportunity_id"]}))
+    assert ">Blocked</span>" not in warn
+
+
 def test_page_renders_upload_panel(env, client):
     r = client.get(BASE)
     assert r.status_code == 200
