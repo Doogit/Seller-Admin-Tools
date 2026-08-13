@@ -44,17 +44,18 @@ BASE = "/home"
 # reactive previews never re-upload the file (single-user local tool).
 _UPLOADS: dict[str, bytes] = {}
 
-_SEL = "block w-full rounded border border-slate-300 px-2 py-1 text-sm"
-_BTN = ("rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white "
-        "hover:bg-slate-700 disabled:opacity-50")
-_BTN2 = ("rounded border border-slate-300 px-3 py-1.5 text-sm font-medium "
-         "text-slate-700 hover:bg-slate-50")
-_H2 = "text-base font-semibold text-slate-900"
-_LBL = "block text-xs font-medium text-slate-600"
+_SEL = ("block w-full rounded border border-border px-2 py-1 text-sm "
+        "focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand")
+_BTN = ("rounded bg-brand px-3 py-1.5 text-sm font-medium text-white "
+        "hover:bg-brand-dark disabled:opacity-50")
+_BTN2 = ("rounded border border-border px-3 py-1.5 text-sm font-medium "
+         "text-ink hover:bg-bg")
+_H2 = "text-base font-semibold text-ink"
+_LBL = "block text-xs font-medium text-muted"
 # Notice level -> a literal class string (Tailwind can't tree-shake a class name
 # built by interpolation, so these must be spelled out).
-_NOTICE_CLS = {"red": "mt-1 text-sm text-red-700",
-               "amber": "mt-1 text-sm text-amber-800"}
+_NOTICE_CLS = {"red": "mt-1 text-sm text-high-ink",
+               "amber": "mt-1 text-sm text-medium-ink"}
 
 
 # --- form parsing ------------------------------------------------------------
@@ -88,12 +89,12 @@ def _profile_defaults(profile_name: str):
 def _field_rows(section: dict):
     rows = []
     for f in section["fields"]:
-        samp = (Span("e.g. " + " | ".join(f["samples"]), cls="text-xs text-slate-500")
-                if f["samples"] else Span("", cls="text-xs text-slate-400"))
+        samp = (Span("e.g. " + " | ".join(f["samples"]), cls="text-xs text-muted")
+                if f["samples"] else Span("", cls="text-xs text-muted"))
         rows.append(Div(
             Div(Label(f["field"], fr=f"map_{f['field']}",
-                      cls="text-sm font-medium text-slate-700"),
-                P(f["description"], cls="text-xs text-slate-500")),
+                      cls="text-sm font-medium text-ink"),
+                P(f["description"], cls="text-xs text-muted")),
             Select(*(Option(o, value=("" if o == vm.NOT_MAPPED else o),
                             selected=(o == f["selected"]))
                      for o in f["options"]),
@@ -116,30 +117,30 @@ def _date_block(date: dict | None, date_format: str):
                     hx_post=f"{BASE}/preview", hx_include="#home-form",
                     hx_target="#home-grid", hx_swap="innerHTML",
                     hx_trigger="change", cls="mr-1"),
-              lbl, cls="mr-4 text-sm text-slate-700")
+              lbl, cls="mr-4 text-sm text-ink")
         for k, lbl in vm.DATE_FORMAT_LABELS.items()
     ]
     if date["error"]:
-        prev = P(date["error"], cls="mt-1 text-sm text-red-700")
+        prev = P(date["error"], cls="mt-1 text-sm text-high-ink")
     else:
         txt = "Preview ({}): {}".format(
             date["resolved"],
             " | ".join(f"{r['raw']} → {r['parsed']}" for r in date["rows"]))
-        prev = P(txt, cls="mt-1 text-xs text-slate-500")
-    return Div(P("Date format", cls="mt-4 text-sm font-medium text-slate-700"),
+        prev = P(txt, cls="mt-1 text-xs text-muted")
+    return Div(P("Date format", cls="mt-4 text-sm font-medium text-ink"),
                Div(*radios, cls="mt-1"), prev)
 
 
 def _stage_block(stage: dict | None):
     if stage is None:
         return Div(H3("Stage buckets", cls=f"mt-4 {_H2}"),
-                   P(vm.STAGE_NEEDS_MAPPING, cls="mt-1 text-sm text-slate-600"))
+                   P(vm.STAGE_NEEDS_MAPPING, cls="mt-1 text-sm text-muted"))
     warn = (P(vm.STAGE_UNMAPPED_PREFIX + ", ".join(stage["unknown"]),
-              cls="mt-1 text-sm text-amber-800") if stage["unknown"] else "")
+              cls="mt-1 text-sm text-medium-ink") if stage["unknown"] else "")
     cards = []
     for r in stage["rows"]:
         cards.append(Div(
-            Label(r["raw"], fr=f"sb:{r['raw']}", cls="text-sm text-slate-700"),
+            Label(r["raw"], fr=f"sb:{r['raw']}", cls="text-sm text-ink"),
             Select(*(Option(b or "(unassigned)", value=b, selected=(b == r["bucket"]))
                      for b in stage["buckets"]),
                    id=f"sb:{r['raw']}", name=f"sb:{r['raw']}", cls=_SEL,
@@ -154,16 +155,16 @@ def _stage_block(stage: dict | None):
 def _validation_block(v: dict):
     if v["error"]:
         return Div(H3("Validation", cls=f"mt-4 {_H2}"),
-                   P(v["error"], cls="mt-1 text-sm text-red-700"))
-    body = [P(b, cls="mt-1 text-sm text-red-700") for b in v["blocking"]]
+                   P(v["error"], cls="mt-1 text-sm text-high-ink"))
+    body = [P(b, cls="mt-1 text-sm text-high-ink") for b in v["blocking"]]
     if v["warnings"]:
         body.append(Details(
             Summary(f"{len(v['warnings'])} warning(s) — rows import as-is",
-                    cls="cursor-pointer text-sm font-medium text-amber-800"),
-            *[P(w, cls="mt-1 text-sm text-amber-800") for w in v["warnings"]],
+                    cls="cursor-pointer text-sm font-medium text-medium-ink"),
+            *[P(w, cls="mt-1 text-sm text-medium-ink") for w in v["warnings"]],
             open=True, cls="mt-1"))
     if not v["blocking"] and not v["warnings"]:
-        body.append(P(vm.NO_VALIDATION_ISSUES, cls="mt-1 text-sm text-emerald-700"))
+        body.append(P(vm.NO_VALIDATION_ISSUES, cls="mt-1 text-sm text-positive-ink"))
     return Div(H3("Validation", cls=f"mt-4 {_H2}"), *body)
 
 
@@ -185,7 +186,7 @@ def _confirm_block(save_as: str, label: str, as_of: str, blocked: bool,
     actions = [confirm]
     if dup:
         actions = [
-            P(vm.duplicate_warning(dup), cls="mt-3 text-sm text-amber-800"),
+            P(vm.duplicate_warning(dup), cls="mt-3 text-sm text-medium-ink"),
             Button("Import anyway", type="button",
                    hx_post=f"{BASE}/import", hx_include="#home-form",
                    hx_vals='{"override": "1"}',
@@ -197,9 +198,9 @@ def _confirm_block(save_as: str, label: str, as_of: str, blocked: bool,
         H3("Confirm import", cls=f"mt-6 {_H2}"), grid,
         Div(*actions,
             Span("importing…", id="home-spin",
-                 cls="htmx-indicator ml-2 text-xs text-slate-500"),
+                 cls="htmx-indicator ml-2 text-xs text-muted"),
             cls="flex flex-wrap items-center"),
-        P(vm.FOOTER, cls="mt-2 text-xs text-slate-500"),
+        P(vm.FOOTER, cls="mt-2 text-xs text-muted"),
     )
 
 
@@ -211,17 +212,17 @@ def _grid_form(token: str, field_mapping, date_format: str, chosen_stages: dict,
     defaults, _ = _profile_defaults(profile_name)
     grid = vm.build_grid(df, field_mapping, date_format, chosen_stages,
                          defaults, vm.alias_index())
-    sections = [Div(H3(s["title"], cls="mt-3 text-sm font-semibold text-slate-800"),
+    sections = [Div(H3(s["title"], cls="mt-3 text-sm font-semibold text-ink"),
                     *_field_rows(s))
                 for s in grid["preview"]["sections"]]
     missing = grid["preview"]["missing_required"]
     guard = (P(vm.REQUIRED_NOT_MAPPED + ", ".join(missing),
-               cls="mt-2 text-sm text-red-700") if missing else "")
+               cls="mt-2 text-sm text-high-ink") if missing else "")
     return Form(
         Input(type="hidden", name="token", value=token),
         Input(type="hidden", name="profile", value=profile_name),
         P("Detected columns: " + ", ".join(df.columns),
-          cls="text-xs text-slate-500"),
+          cls="text-xs text-muted"),
         *[P(t, cls=_NOTICE_CLS[c]) for t, c in notices],
         *sections, guard,
         _date_block(grid["preview"]["date"], date_format),
@@ -256,13 +257,13 @@ def _upload_controls(profile_name: str, grid_inner):
 def _import_panel(expanded: bool, profile_name: str = vm.NEW_MAPPING, grid_inner=None):
     return Details(
         Summary("Import pipeline CSV",
-                cls="cursor-pointer text-sm font-medium text-slate-700"),
+                cls="cursor-pointer text-sm font-medium text-ink"),
         Div(_upload_controls(profile_name,
                              grid_inner if grid_inner is not None
-                             else P(vm.UPLOAD_HINT, cls="text-slate-600")),
+                             else P(vm.UPLOAD_HINT, cls="text-muted")),
             cls="mt-3"),
         open=expanded,
-        cls="rounded border border-slate-200 bg-slate-50 px-4 py-3",
+        cls="rounded border border-border bg-surface px-4 py-3",
     )
 
 
@@ -272,9 +273,9 @@ def _body():
 
 def _success_body(message: str, warnings: list[str]):
     return Div(
-        P(message, cls="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 "
-                       "text-emerald-800"),
-        *[P(w, cls="mt-2 text-sm text-amber-800") for w in warnings],
+        P(message, cls="rounded-md border-l-4 border-positive bg-positive-tint "
+                       "px-4 py-3 text-positive-ink"),
+        *[P(w, cls="mt-2 text-sm text-medium-ink") for w in warnings],
         A("Import another CSV", href=BASE, cls=f"mt-4 inline-block {_BTN2}"),
         id="home-body")
 
@@ -282,8 +283,8 @@ def _success_body(message: str, warnings: list[str]):
 def _full_page():
     return page("Pipeline Import",
                 H1("Pipeline import & column mapping",
-                   cls="text-2xl font-bold text-slate-900"),
-                P(vm.CAPTION, cls="mt-1 text-slate-600"),
+                   cls="text-2xl font-bold text-ink"),
+                P(vm.CAPTION, cls="mt-1 text-muted"),
                 _body(), active=BASE)
 
 
@@ -304,12 +305,12 @@ def register(rt):
         form = await request.form()
         upload = form.get("pipeline_csv")
         if upload is None or not hasattr(upload, "read"):
-            return P("No file received.", cls="text-sm text-red-700")
+            return P("No file received.", cls="text-sm text-high-ink")
         raw = await upload.read()
         try:
             df = ingest.load_csv(raw)
         except ingest.IngestError as e:
-            return P(str(e), cls="text-sm text-red-700")
+            return P(str(e), cls="text-sm text-high-ink")
         token = uuid.uuid4().hex
         _UPLOADS[token] = raw
         return _rendered_grid(token, df, form.get("profile", vm.NEW_MAPPING))
@@ -319,7 +320,7 @@ def register(rt):
         form = await request.form()
         raw = _UPLOADS.get(form.get("token", ""))
         if raw is None:
-            return P(vm.UPLOAD_HINT, cls="text-slate-600")
+            return P(vm.UPLOAD_HINT, cls="text-muted")
         df = ingest.load_csv(raw)
         return _rendered_grid(form["token"], df, form.get("profile", vm.NEW_MAPPING))
 
@@ -328,7 +329,7 @@ def register(rt):
         form = await request.form()
         raw = _UPLOADS.get(form.get("token", ""))
         if raw is None:
-            return P("Upload expired — re-select the CSV.", cls="text-sm text-red-700")
+            return P("Upload expired — re-select the CSV.", cls="text-sm text-high-ink")
         today = dt.date.today().isoformat()
         return _grid_form(
             form["token"], _mapping_from_form(form),

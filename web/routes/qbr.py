@@ -24,8 +24,9 @@ from web.routes import _params
 BASE = "/qbr"
 CHART_EMPTY = "No open pipeline to chart in this snapshot."
 
-_SEL = "block w-full rounded border border-slate-300 px-2 py-1 text-sm"
-_LBL = "block text-xs font-medium text-slate-600"
+_SEL = ("block w-full rounded border border-border px-2 py-1 text-sm "
+        "focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand")
+_LBL = "block text-xs font-semibold uppercase tracking-wide text-muted"
 
 
 # --- fragments ---------------------------------------------------------------
@@ -63,16 +64,16 @@ def _controls(v: vm.QbrView):
 
 def _chart(v: vm.QbrView):
     if v.stage["empty"]:
-        return P(CHART_EMPTY, cls="text-sm text-slate-600")
+        return P(CHART_EMPTY, cls="text-sm text-muted")
     rows = [
         Div(
-            Div(P(b["bucket"], cls="text-xs text-slate-600"),
+            Div(P(b["bucket"], cls="text-xs text-muted"),
                 cls="w-24 shrink-0"),
             Div(
-                Div(cls="h-4 rounded bg-slate-800", style=f"width: {max(b['pct'], 2)}%"),
-                cls="flex-1",
+                Div(cls="h-4 rounded bg-brand", style=f"width: {max(b['pct'], 2)}%"),
+                cls="flex-1 rounded bg-border",
             ),
-            Div(P(b["amount_str"], cls="text-xs tabular-nums text-slate-700"),
+            Div(P(b["amount_str"], cls="text-xs tabular-nums text-ink"),
                 cls="w-16 shrink-0 text-right"),
             cls="flex items-center gap-2",
         )
@@ -84,17 +85,17 @@ def _chart(v: vm.QbrView):
 def _downloads(v: vm.QbrView):
     stamp = dt.date.today().strftime("%Y%m%d")
     fname = f"qbr_{v.safe_period}_{stamp}"
-    btn = ("rounded border border-slate-300 px-3 py-1.5 text-sm font-medium "
-           "text-slate-700 hover:bg-slate-50")
+    btn = ("rounded border border-border px-3 py-1.5 text-sm font-medium "
+           "text-ink hover:bg-bg")
     return Div(
-        H2("Downloads", cls="mt-6 text-base font-semibold text-slate-900"),
+        H2("Downloads", cls="mt-6 text-base font-semibold text-ink"),
         Div(
             Button(".pptx", type="submit", form="qbr-controls",
                    formaction=f"{BASE}/export/pptx", formmethod="get", cls=btn),
             Button(".md appendix", type="submit", form="qbr-controls",
                    formaction=f"{BASE}/export/md", formmethod="get",
                    cls=btn + " ml-2"),
-            P(f"filename: {fname}.pptx / .md", cls="mt-2 text-xs text-slate-400"),
+            P(f"filename: {fname}.pptx / .md", cls="mt-2 text-xs text-muted"),
             cls="mt-2",
         ),
     )
@@ -102,9 +103,9 @@ def _downloads(v: vm.QbrView):
 
 def _sub_vertical(v: vm.QbrView):
     if v.sub_vertical is None:
-        return P(vm.SUBVERTICAL_UNAVAILABLE, cls="mt-2 text-sm text-slate-500")
+        return P(vm.SUBVERTICAL_UNAVAILABLE, cls="mt-2 text-sm text-muted")
     return Div(
-        H2("Sub-vertical split", cls="mt-6 text-base font-semibold text-slate-900"),
+        H2("Sub-vertical split", cls="mt-6 text-base font-semibold text-ink"),
         Div(data_table(v.sub_vertical["columns"], v.sub_vertical["rows"]), cls="mt-2"),
     )
 
@@ -112,7 +113,7 @@ def _sub_vertical(v: vm.QbrView):
 def _credibility(v: vm.QbrView):
     if not v.credibility:
         return ""
-    return P(v.credibility, cls="mt-2 text-xs text-slate-500")
+    return P(v.credibility, cls="mt-2 text-xs text-muted")
 
 
 def _trend(v: vm.QbrView):
@@ -120,15 +121,15 @@ def _trend(v: vm.QbrView):
         return ""
     return Div(
         H2("Trend (through this snapshot)",
-           cls="mt-6 text-base font-semibold text-slate-900"),
+           cls="mt-6 text-base font-semibold text-ink"),
         Div(data_table(v.trend["columns"], v.trend["rows"]), cls="mt-2"),
-        P(vm.TREND_CAPTION, cls="mt-1 text-xs text-slate-500"),
+        P(vm.TREND_CAPTION, cls="mt-1 text-xs text-muted"),
     )
 
 
 def _owner(v: vm.QbrView):
     return Div(
-        H2("By seller", cls="mt-6 text-base font-semibold text-slate-900"),
+        H2("By seller", cls="mt-6 text-base font-semibold text-ink"),
         Div(data_table(v.owner["columns"], v.owner["rows"], v.owner["empty_text"]),
             cls="mt-2"),
     )
@@ -137,21 +138,21 @@ def _owner(v: vm.QbrView):
 def _data(v: vm.QbrView):
     return Div(
         Div(metric_cards(v.metrics),
-            P(vm.NUMBERS_IDENTICAL, cls="mt-2 text-xs text-slate-500"),
+            P(vm.NUMBERS_IDENTICAL, cls="mt-2 text-xs text-muted"),
             _credibility(v),
             cls="mt-4"),
         _trend(v),
-        H2("Pipeline by stage", cls="mt-6 text-base font-semibold text-slate-900"),
+        H2("Pipeline by stage", cls="mt-6 text-base font-semibold text-ink"),
         Div(_chart(v), cls="mt-2"),
         _sub_vertical(v),
         _owner(v),
-        H2("Top deals", cls="mt-6 text-base font-semibold text-slate-900"),
+        H2("Top deals", cls="mt-6 text-base font-semibold text-ink"),
         Div(data_table(v.top["columns"], v.top["rows"]), cls="mt-2"),
-        H2("Risks", cls="mt-6 text-base font-semibold text-slate-900"),
-        *[P(n, cls="text-xs text-slate-500") for n in v.risk["notes"]],
-        data_table(v.risk["columns"], v.risk["rows"], v.risk["empty_text"]),
+        H2("Risks", cls="mt-6 text-base font-semibold text-ink"),
+        *[P(n, cls="text-xs text-muted") for n in v.risk["notes"]],
+        data_table(v.risk["columns"], v.risk["rows"], v.risk["empty_text"], chip_col="rule"),
         _downloads(v),
-        P(vm.FOOTER, cls="mt-8 border-t border-slate-200 pt-3 text-xs text-slate-500"),
+        P(vm.FOOTER, cls="mt-8 border-t border-border pt-3 text-xs text-muted"),
         id="qbr-data",
     )
 
@@ -159,7 +160,7 @@ def _data(v: vm.QbrView):
 def _full_page(v: vm.QbrView):
     return page(
         "QBR Assembler",
-        H1("QBR assembler", cls="text-2xl font-bold text-slate-900"),
+        H1("QBR assembler", cls="text-2xl font-bold text-ink"),
         _controls(v), _data(v),
         active=BASE,
     )
@@ -168,9 +169,9 @@ def _full_page(v: vm.QbrView):
 def _empty_page():
     return page(
         "QBR Assembler",
-        H1("QBR assembler", cls="text-2xl font-bold text-slate-900"),
-        P(vm.EMPTY_STATE, cls="mt-4 rounded border border-slate-200 bg-slate-50 "
-                              "px-4 py-3 text-slate-600"),
+        H1("QBR assembler", cls="text-2xl font-bold text-ink"),
+        P(vm.EMPTY_STATE, cls="mt-4 rounded border border-border bg-surface "
+                              "px-4 py-3 text-muted"),
         active=BASE,
     )
 
