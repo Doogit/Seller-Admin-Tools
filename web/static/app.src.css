@@ -4,3 +4,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Ground the app on the chosen cool-neutral background with the primary ink
+   color, so surfaces (bg-surface cards/tables) lift off it. Uses the design
+   tokens from tailwind.config.js. System fonts only — no webfont, stays
+   offline. */
+@layer base {
+  body {
+    @apply min-h-screen bg-bg text-ink;
+  }
+}

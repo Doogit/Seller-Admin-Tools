@@ -30,13 +30,14 @@ BASE = "/forecast-narrative"
 
 # --- fragments ---------------------------------------------------------------
 
-_SEL = "block w-full rounded border border-slate-300 px-2 py-1 text-sm"
+_SEL = ("block w-full rounded border border-border px-2 py-1 text-sm "
+        "focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand")
 
 
 def _controls(v: vm.ForecastView):
     snap = Div(
         Label("Snapshot", fr="current_id",
-              cls="block text-xs font-medium text-slate-600"),
+              cls="block text-xs font-medium text-muted"),
         Select(
             *(Option(lbl, value=str(sid), selected=(sid == v.current_id))
               for sid, lbl in v.snapshot_options),
@@ -47,7 +48,7 @@ def _controls(v: vm.ForecastView):
     )
     compare = Div(
         Label("Compare against", fr="prior_id",
-              cls="block text-xs font-medium text-slate-600"),
+              cls="block text-xs font-medium text-muted"),
         Select(
             Option(vm.PRIOR_NONE_LABEL, value="", selected=(v.prior_id is None)),
             *(Option(lbl, value=str(sid), selected=(sid == v.prior_id))
@@ -59,7 +60,7 @@ def _controls(v: vm.ForecastView):
     )
     quota = Div(
         Label("Quota (optional, session-only)", fr="quota",
-              cls="block text-xs font-medium text-slate-600"),
+              cls="block text-xs font-medium text-muted"),
         Input(
             type="number", id="quota", name="quota", min="0", step="100000",
             value=("" if not v.quota else f"{v.quota:.0f}"), cls=_SEL,
@@ -75,8 +76,8 @@ def _controls(v: vm.ForecastView):
 
 def _metrics(v: vm.ForecastView):
     warn = ([Div(v.unmatched["warning"],
-                 cls="mt-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 "
-                     "text-sm text-amber-800", role="status")]
+                 cls="mt-3 rounded-md border-l-4 border-medium bg-medium-tint "
+                     "px-3 py-2 text-sm text-medium-ink", role="status")]
             if v.unmatched["warning"] else [])
     return Div(metric_cards(v.metrics), *warn, id="metrics")
 
@@ -86,10 +87,11 @@ def _draft_inner(v: vm.ForecastView):
     fields = [
         Div(
             Label(vm.SECTION_LABELS[s], fr=f"ta-{s}",
-                  cls="block text-sm font-medium text-slate-700"),
+                  cls="block text-sm font-medium text-ink"),
             Textarea(v.draft[s], id=f"ta-{s}", name=s, rows="4",
-                     cls="mt-1 block w-full rounded border border-slate-300 "
-                         "px-2 py-1 text-sm font-mono",
+                     cls="mt-1 block w-full rounded border border-border "
+                         "px-2 py-1 text-sm font-mono focus:border-brand "
+                         "focus:outline-none focus:ring-1 focus:ring-brand",
                      **{"data-generated": v.draft[s]}),
             cls="mt-3",
         )
@@ -109,26 +111,26 @@ def _draft_inner(v: vm.ForecastView):
                    hx_sync="this:drop", hx_disabled_elt="this",
                    hx_indicator="#draft-spin",
                    **{"data-confirm-dirty": "1"},
-                   cls="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium "
-                       "text-white hover:bg-slate-700 disabled:opacity-50"),
+                   cls="rounded bg-brand px-3 py-1.5 text-sm font-medium "
+                       "text-white hover:bg-brand-dark disabled:opacity-50"),
             Span("regenerating…", id="draft-spin",
-                 cls="htmx-indicator ml-2 text-xs text-slate-500"),
+                 cls="htmx-indicator ml-2 text-xs text-muted"),
             Button("Download .md", type="submit",
                    formaction=f"{BASE}/export", formmethod="post",
-                   cls="ml-2 rounded border border-slate-300 px-3 py-1.5 text-sm "
-                       "font-medium text-slate-700 hover:bg-slate-50"),
+                   cls="ml-2 rounded border border-border px-3 py-1.5 text-sm "
+                       "font-medium text-ink hover:bg-bg"),
             cls="mt-3 flex items-center",
         ),
         id="draft-form",
     )
     return [
         H2("Draft — review before submitting",
-           cls="text-base font-semibold text-slate-900"),
+           cls="text-base font-semibold text-ink"),
         draft_form,
-        H2("Export", cls="mt-6 text-base font-semibold text-slate-900"),
+        H2("Export", cls="mt-6 text-base font-semibold text-ink"),
         Pre(export_md,
-            cls="mt-2 overflow-x-auto rounded bg-slate-50 p-3 text-xs "
-                "text-slate-800 whitespace-pre-wrap"),
+            cls="mt-2 overflow-x-auto rounded border border-border bg-surface p-3 text-xs "
+                "text-ink whitespace-pre-wrap"),
     ]
 
 
@@ -140,10 +142,10 @@ def _challenge(v: vm.ForecastView):
     c = v.challenge
     return Div(
         H2("Largest open deals (challenge list)",
-           cls="mt-6 text-base font-semibold text-slate-900"),
+           cls="mt-6 text-base font-semibold text-ink"),
         P("Top open deals by amount — the commit/upside deals to pressure-test on "
           "the call. The flags column shows which already tripped a risk rule.",
-          cls="text-xs text-slate-500"),
+          cls="text-xs text-muted"),
         Div(data_table(c["columns"], c["rows"]), cls="mt-2"),
     )
 
@@ -152,9 +154,9 @@ def _risk(v: vm.ForecastView):
     r = v.risk
     return Div(
         H2("Risk detail (coaching view)",
-           cls="mt-6 text-base font-semibold text-slate-900"),
-        *[P(n, cls="text-xs text-slate-500") for n in r["notes"]],
-        data_table(r["columns"], r["rows"], r["empty_text"]),
+           cls="mt-6 text-base font-semibold text-ink"),
+        *[P(n, cls="text-xs text-muted") for n in r["notes"]],
+        data_table(r["columns"], r["rows"], r["empty_text"], chip_col="rule"),
     )
 
 
@@ -164,14 +166,14 @@ def _movement(v: vm.ForecastView):
         return ""
     return Details(
         Summary("Week-over-week movement detail",
-                cls="cursor-pointer text-sm font-medium text-slate-700"),
+                cls="cursor-pointer text-sm font-medium text-ink"),
         Div(data_table(mv["columns"], mv["rows"]), cls="mt-2"),
         cls="mt-4",
     )
 
 
 def _footer():
-    return P(vm.FOOTER, cls="mt-8 border-t border-slate-200 pt-3 text-xs text-slate-500")
+    return P(vm.FOOTER, cls="mt-8 border-t border-border pt-3 text-xs text-muted")
 
 
 def _body(v: vm.ForecastView):
@@ -185,7 +187,7 @@ def _body(v: vm.ForecastView):
 def _full_page(v: vm.ForecastView):
     return page(
         "Forecast Narrative",
-        H1("Forecast narrative", cls="text-2xl font-bold text-slate-900"),
+        H1("Forecast narrative", cls="text-2xl font-bold text-ink"),
         _body(v),
         Script(src="/forecast_narrative.js"),
         active=BASE,
@@ -195,9 +197,9 @@ def _full_page(v: vm.ForecastView):
 def _empty_page():
     return page(
         "Forecast Narrative",
-        H1("Forecast narrative", cls="text-2xl font-bold text-slate-900"),
-        P(vm.EMPTY_STATE, cls="mt-4 rounded border border-slate-200 bg-slate-50 "
-                              "px-4 py-3 text-slate-600"),
+        H1("Forecast narrative", cls="text-2xl font-bold text-ink"),
+        P(vm.EMPTY_STATE, cls="mt-4 rounded border border-border bg-surface "
+                              "px-4 py-3 text-muted"),
         active=BASE,
     )
 

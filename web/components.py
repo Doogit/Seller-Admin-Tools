@@ -33,19 +33,19 @@ def page(title: str, *content, active: str | None = None):
         Header(
             Div(
                 A(APP_NAME, href="/",
-                  cls="text-lg font-semibold text-slate-900 hover:text-slate-700"),
+                  cls="text-lg font-semibold text-ink hover:text-brand"),
                 Nav(
                     *(A(label, href=path,
                         cls=("px-2 py-1 rounded text-sm "
-                             + ("bg-slate-900 text-white"
+                             + ("bg-brand text-white"
                                 if active == path
-                                else "text-slate-600 hover:text-slate-900")))
+                                else "text-muted hover:text-ink hover:bg-bg")))
                       for label, path, _ in TOOLS),
                     cls="flex gap-2",
                 ),
                 cls="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between",
             ),
-            cls="border-b border-slate-200 bg-white",
+            cls="border-b border-border bg-surface",
         ),
         Main(*content, cls="max-w-5xl mx-auto px-4 py-8"),
     )
@@ -53,62 +53,111 @@ def page(title: str, *content, active: str | None = None):
 
 def tool_card(label: str, path: str, blurb: str):
     return A(
-        H2(label, cls="text-base font-semibold text-slate-900"),
-        P(blurb, cls="mt-1 text-sm text-slate-600"),
+        H2(label, cls="text-base font-semibold text-ink"),
+        P(blurb, cls="mt-1 text-sm text-muted"),
         href=path,
-        cls=("block rounded-lg border border-slate-200 bg-white p-5 "
-             "hover:border-slate-400 hover:shadow-sm transition"),
+        cls=("block rounded-lg border border-border bg-surface p-5 "
+             "hover:border-brand hover:shadow-sm transition"),
     )
 
 
-def _metric_card(label: str, value: str, delta: str | None = None):
+def _delta(delta: str):
+    """Week-over-week delta with a direction glyph + status tone. Deltas only
+    appear on Commit/Upside, where an increase is a gain (positive token); a
+    decrease reads in the high token. Parses the pre-formatted money string."""
+    if delta == "$0":
+        return P(delta, cls="mt-1 text-xs text-muted tabular-nums")
+    down = delta.lstrip().startswith("-")
+    glyph, tone = ("▼", "text-high-ink") if down else ("▲", "text-positive-ink")
+    return P(f"{glyph} {delta}",
+             cls=f"mt-1 text-xs font-medium tabular-nums {tone}")
+
+
+def _metric_card(label: str, value: str, delta: str | None = None,
+                 attn: bool = False):
+    val_tone = "text-high" if attn else "text-ink"
+    top = " border-t-2 border-high" if attn else ""
     return Div(
-        P(label, cls="text-xs font-medium text-slate-500"),
-        P(value, cls="mt-1 text-xl font-semibold text-slate-900"),
-        (P(delta, cls="text-xs text-slate-500") if delta else ""),
-        cls="rounded-lg border border-slate-200 bg-white p-4",
+        P(label, cls="text-xs font-semibold uppercase tracking-wide text-muted"),
+        P(value, cls=f"mt-1 text-2xl font-semibold tabular-nums {val_tone}"),
+        (_delta(delta) if delta else ""),
+        cls=f"rounded-lg border border-border bg-surface p-4{top}",
     )
 
 
 def metric_cards(metrics: dict):
     """Commit / Upside / Coverage / At-risk cards + derived/unclassified notes.
     Shared by the Forecast Narrative and QBR scorecards (identical strings, from
-    core.views.common.metric_block)."""
+    core.views.common.metric_block). At-risk carries the high token — it's the
+    exposure number to read first. The derived note gets a medium stripe."""
     cards = Div(
         _metric_card("Commit", metrics["commit"], metrics["commit_delta"]),
         _metric_card("Upside", metrics["upside"], metrics["upside_delta"]),
         _metric_card("Coverage", metrics["coverage"]),
-        _metric_card("At risk", metrics["at_risk"]),
+        _metric_card("At risk", metrics["at_risk"], attn=True),
         cls="grid gap-3 sm:grid-cols-4",
     )
-    notes = [P(n, cls="mt-2 text-xs text-slate-500")
+    notes = [P(n, cls="mt-2 border-l-2 border-medium pl-2 text-xs text-muted")
              for n in (metrics["derived_note"], metrics["unclassified_note"]) if n]
     return Div(cards, *notes)
 
 
-def data_table(columns, rows, empty_text: str | None = None):
+def _chip(text: str):
+    """Status chip: tinted background + a colored dot + the literal status word,
+    so meaning is never carried by color alone (colorblind-safe)."""
+    return Span(
+        Span(cls="mr-1.5 inline-block h-1.5 w-1.5 rounded-sm bg-high"),
+        text,
+        cls="inline-flex items-center rounded-full bg-high-tint px-2 py-0.5 "
+            "text-xs font-semibold text-high-ink",
+    )
+
+
+def _is_numeric(val: str) -> bool:
+    s = str(val).strip()
+    return bool(s) and (s[0] == "$" or s.lstrip("-").replace(",", "").isdigit())
+
+
+def data_table(columns, rows, empty_text: str | None = None,
+               chip_col: str | None = None):
     """Generic read-only table from view-model columns + row dicts. Rows are
     pre-formatted in the view model (amounts money-formatted). Scrolls
-    horizontally on narrow screens; never overflows the page."""
+    horizontally on narrow screens; never overflows the page.
+
+    Money/count columns right-align with tabular figures so magnitudes compare
+    down the column; the optional chip_col renders its value as a status chip
+    (used by the risk/exception tables). No view-model string is altered."""
     if not rows:
-        return P(empty_text or "", cls="text-sm text-slate-600")
-    head = Thead(Tr(*(Th(c.replace("_", " "),
-                         cls="px-2 py-1 text-left font-medium text-slate-600")
-                      for c in columns)))
-    body = Tbody(*(Tr(*(Td(str(r.get(c, "")), cls="px-2 py-1 align-top")
-                        for c in columns),
-                      cls="border-t border-slate-100")
+        return P(empty_text or "", cls="text-sm text-muted")
+    numeric = {c: any(_is_numeric(r.get(c, "")) for r in rows) for c in columns}
+
+    def _th(c):
+        align = "text-right" if numeric[c] else "text-left"
+        return Th(c.replace("_", " "),
+                  cls=(f"px-3 py-2 {align} text-xs font-semibold uppercase "
+                       "tracking-wide text-muted"))
+
+    def _td(c, r):
+        if chip_col and c == chip_col:
+            return Td(_chip(str(r.get(c, ""))), cls="px-3 py-2 align-top")
+        align = " text-right tabular-nums" if numeric[c] else ""
+        return Td(str(r.get(c, "")), cls=f"px-3 py-2 align-top{align}")
+
+    head = Thead(Tr(*(_th(c) for c in columns),
+                    cls="border-b border-border bg-surface"))
+    body = Tbody(*(Tr(*(_td(c, r) for c in columns),
+                      cls="odd:bg-surface even:bg-bg")
                    for r in rows))
     return Div(Table(head, body, cls="w-full text-sm"),
-               cls="overflow-x-auto rounded border border-slate-200")
+               cls="overflow-x-auto rounded-lg border border-border bg-surface")
 
 
 def landing():
     return page(
         "Home",
-        H1("Seller admin tools", cls="text-2xl font-bold text-slate-900"),
+        H1("Seller admin tools", cls="text-2xl font-bold text-ink"),
         P("Local, offline, read-only. Turn a weekly pipeline snapshot into "
-          "admin artifacts.", cls="mt-1 text-slate-600"),
+          "admin artifacts.", cls="mt-1 text-muted"),
         Div(*(tool_card(*t) for t in TOOLS),
             cls="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"),
     )

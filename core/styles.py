@@ -11,7 +11,7 @@ FOOTER_SIZE_PT = 9
 DRAFT_FOOTER = "DRAFT — generated locally; review before presenting"
 OPP_NAME_TRUNCATE = 40  # pptx tables silently overflow the slide otherwise
 
-ACCENT_RGB = (31, 78, 121)   # dark blue
+ACCENT_RGB = (0, 114, 178)   # brand blue #0072B2 — matches the web UI accent
 MUTED_RGB = (89, 89, 89)
 
 

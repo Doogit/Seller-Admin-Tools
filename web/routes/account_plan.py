@@ -42,12 +42,13 @@ ALIASES_PATH = crosswalk.REPO_ROOT / "config" / "aliases.yaml"
 # per-field previews never re-upload the file (single-user local tool).
 _UPLOADS: dict[str, bytes] = {}
 
-_SEL = "block w-full rounded border border-slate-300 px-2 py-1 text-sm"
-_BTN = ("rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white "
-        "hover:bg-slate-700 disabled:opacity-50")
-_BTN2 = ("rounded border border-slate-300 px-3 py-1.5 text-sm font-medium "
-         "text-slate-700 hover:bg-slate-50")
-_H2 = "text-base font-semibold text-slate-900"
+_SEL = ("block w-full rounded border border-border px-2 py-1 text-sm "
+        "focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand")
+_BTN = ("rounded bg-brand px-3 py-1.5 text-sm font-medium text-white "
+        "hover:bg-brand-dark disabled:opacity-50")
+_BTN2 = ("rounded border border-border px-3 py-1.5 text-sm font-medium "
+         "text-ink hover:bg-bg")
+_H2 = "text-base font-semibold text-ink"
 
 
 # --- import grid -------------------------------------------------------------
@@ -55,7 +56,7 @@ _H2 = "text-base font-semibold text-slate-900"
 def _upload_form():
     return Form(
         Label("Account facts CSV", fr="facts_csv",
-              cls="block text-xs font-medium text-slate-600"),
+              cls="block text-xs font-medium text-muted"),
         Input(type="file", id="facts_csv", name="facts_csv", accept=".csv",
               cls="mt-1 block text-sm",
               hx_post=f"{BASE}/facts/upload", hx_target="#facts-grid",
@@ -71,12 +72,12 @@ def _facts_grid(token: str, preview: dict, date_format: str):
         rows = []
         for f in sec["fields"]:
             samp = (Span("e.g. " + " | ".join(f["samples"]),
-                         cls="text-xs text-slate-500")
-                    if f["samples"] else Span("", cls="text-xs text-slate-400"))
+                         cls="text-xs text-muted")
+                    if f["samples"] else Span("", cls="text-xs text-muted"))
             rows.append(Div(
                 Div(Label(f["field"], fr=f"map_{f['field']}",
-                          cls="text-sm font-medium text-slate-700"),
-                    P(f["description"], cls="text-xs text-slate-500")),
+                          cls="text-sm font-medium text-ink"),
+                    P(f["description"], cls="text-xs text-muted")),
                 Select(*(Option(o, value=("" if o == vm.NOT_MAPPED else o),
                                 selected=(o == f["selected"]))
                          for o in f["options"]),
@@ -88,12 +89,12 @@ def _facts_grid(token: str, preview: dict, date_format: str):
                 cls="grid gap-2 sm:grid-cols-3 items-start py-1",
             ))
         sections.append(Div(H3(sec["title"], cls="mt-3 text-sm font-semibold "
-                                                 "text-slate-800"), *rows))
+                                                 "text-ink"), *rows))
 
     date = _date_block(preview["date"], date_format)
     missing = preview["missing_required"]
     guard = (P(vm.REQUIRED_NOT_MAPPED + ", ".join(missing),
-               cls="mt-2 text-sm text-red-700") if missing else "")
+               cls="mt-2 text-sm text-high-ink") if missing else "")
     date_error = bool(preview["date"] and preview["date"]["error"])
     import_btn = Button("Import account facts", type="button",
                         disabled=(bool(missing) or date_error),
@@ -105,7 +106,7 @@ def _facts_grid(token: str, preview: dict, date_format: str):
         Input(type="hidden", name="token", value=token),
         *sections, date, guard,
         Div(import_btn, Span("importing…", id="facts-spin",
-                             cls="htmx-indicator ml-2 text-xs text-slate-500"),
+                             cls="htmx-indicator ml-2 text-xs text-muted"),
             cls="flex items-center"),
         id="facts-form",
     )
@@ -120,17 +121,17 @@ def _date_block(date: dict | None, date_format: str):
                     hx_post=f"{BASE}/facts/preview", hx_include="#facts-form",
                     hx_target="#facts-grid", hx_swap="innerHTML",
                     hx_trigger="change", cls="mr-1"),
-              lbl, cls="mr-4 text-sm text-slate-700")
+              lbl, cls="mr-4 text-sm text-ink")
         for k, lbl in vm.DATE_FORMAT_LABELS.items()
     ]
     if date["error"]:
-        prev = P(date["error"], cls="mt-1 text-sm text-red-700")
+        prev = P(date["error"], cls="mt-1 text-sm text-high-ink")
     else:
         txt = "Preview ({}): {}".format(
             date["resolved"],
             " | ".join(f"{r['raw']} → {r['parsed']}" for r in date["rows"]))
-        prev = P(txt, cls="mt-1 text-xs text-slate-500")
-    return Div(P("Date format", cls="mt-3 text-sm font-medium text-slate-700"),
+        prev = P(txt, cls="mt-1 text-xs text-muted")
+    return Div(P("Date format", cls="mt-3 text-sm font-medium text-ink"),
                Div(*radios, cls="mt-1"), prev)
 
 
@@ -145,23 +146,23 @@ def _mapping_from_form(form) -> dict[str, str | None]:
 # --- plan render -------------------------------------------------------------
 
 def _metric(label: str, value):
-    return Div(P(label, cls="text-xs font-medium text-slate-500"),
-               P(str(value), cls="mt-1 text-xl font-semibold text-slate-900"),
-               cls="rounded-lg border border-slate-200 bg-white p-4")
+    return Div(P(label, cls="text-xs font-semibold uppercase tracking-wide text-muted"),
+               P(str(value), cls="mt-1 text-2xl font-semibold tabular-nums text-ink"),
+               cls="rounded-lg border border-border bg-surface p-4")
 
 
 def _alias_block(v: vm.AccountPlanView, account_name: str, snapshot_id):
     z = v.zero_match
     if not z:
         return ""
-    body = [P(z["warning"], cls="text-sm text-amber-800")]
+    body = [P(z["warning"], cls="text-sm text-medium-ink")]
     if z["candidates"]:
         body.append(Form(
             Input(type="hidden", name="account_name", value=account_name),
             Input(type="hidden", name="snapshot_id",
                   value=("" if snapshot_id is None else str(snapshot_id))),
             Label("Did you mean this pipeline account?", fr="alias_pick",
-                  cls="block text-xs font-medium text-slate-600"),
+                  cls="block text-xs font-medium text-muted"),
             Select(*(Option(c, value=c) for c in z["candidates"]),
                    id="alias_pick", name="pick", cls=_SEL),
             Button("Confirm same account", type="button", cls=f"mt-2 {_BTN2}",
@@ -171,8 +172,8 @@ def _alias_block(v: vm.AccountPlanView, account_name: str, snapshot_id):
             cls="mt-2",
         ))
     else:
-        body.append(P(z["no_candidates_text"], cls="text-xs text-slate-500"))
-    return Div(*body, cls="mt-3 rounded border border-amber-300 bg-amber-50 px-3 py-2")
+        body.append(P(z["no_candidates_text"], cls="text-xs text-muted"))
+    return Div(*body, cls="mt-3 rounded-md border-l-4 border-medium bg-medium-tint px-3 py-2")
 
 
 def _unresolved_block(v: vm.AccountPlanView, account_name: str, snapshot_id):
@@ -186,7 +187,7 @@ def _unresolved_block(v: vm.AccountPlanView, account_name: str, snapshot_id):
             Input(type="hidden", name="snapshot_id",
                   value=("" if snapshot_id is None else str(snapshot_id))),
             Input(type="hidden", name="product", value=product),
-            Div(Span(product, cls="text-sm text-slate-800"),
+            Div(Span(product, cls="text-sm text-ink"),
                 Select(*(Option(c, value=c) for c in u["categories"]),
                        name="category", cls=_SEL),
                 Button("Assign", type="button", cls=_BTN2,
@@ -200,13 +201,13 @@ def _unresolved_block(v: vm.AccountPlanView, account_name: str, snapshot_id):
 
 
 def _plan(v: vm.AccountPlanView, account_name: str, snapshot_id):
-    warnings = [P(w, cls="mt-1 text-sm text-amber-800") for w in v.warnings]
+    warnings = [P(w, cls="mt-1 text-sm text-medium-ink") for w in v.warnings]
     uncovered = ""
     if v.uncovered["rows"]:
         uncovered = Div(
             H2("Uncovered gaps — no play exists yet", cls=f"mt-6 {_H2}"),
             Ul(*(Li(P(f"{r['obligation_id']}: {r['capability_category']} "
-                      f"({r['product_label']})", cls="text-sm text-slate-700"))
+                      f"({r['product_label']})", cls="text-sm text-ink"))
                  for r in v.uncovered["rows"]), cls="mt-1 list-disc pl-5"))
     pipeline = ""
     if v.pipeline["rows"]:
@@ -216,13 +217,13 @@ def _plan(v: vm.AccountPlanView, account_name: str, snapshot_id):
                     "snapshot_id": "" if snapshot_id is None else snapshot_id})
     return Div(
         H2(f"Plan — {v.account_display}", cls=_H2),
-        *[P(b, cls="text-sm text-slate-600") for b in v.summary],
+        *[P(b, cls="text-sm text-muted") for b in v.summary],
         _alias_block(v, account_name, snapshot_id),
         Div(_metric(vm.METRIC_WHITESPACE, v.metrics["whitespace"]),
             _metric(vm.METRIC_UNCOVERED, v.metrics["uncovered"]),
             _metric(vm.METRIC_OBLIGATIONS, v.metrics["obligations"]),
             cls="mt-4 grid gap-3 sm:grid-cols-3"),
-        (P(vm.UNMEASURABLE_WHITESPACE, cls="mt-2 text-xs text-slate-500")
+        (P(vm.UNMEASURABLE_WHITESPACE, cls="mt-2 text-xs text-muted")
          if v.unmeasurable else ""),
         *warnings,
         Div(H2("Obligation → capability → gap", cls=f"mt-6 {_H2}"),
@@ -231,14 +232,14 @@ def _plan(v: vm.AccountPlanView, account_name: str, snapshot_id):
         _unresolved_block(v, account_name, snapshot_id),
         pipeline,
         Div(H2("Next actions", cls=f"mt-6 {_H2}"),
-            Ul(*(Li(P(a, cls="text-sm text-slate-700")) for a in v.next_actions),
+            Ul(*(Li(P(a, cls="text-sm text-ink")) for a in v.next_actions),
                cls="mt-1 list-disc pl-5"),
-            P(v.relationship_map, cls="mt-2 text-xs text-slate-500")),
+            P(v.relationship_map, cls="mt-2 text-xs text-muted")),
         Div(H2("Downloads", cls=f"mt-6 {_H2}"),
             A("Download .pptx", href=f"{BASE}/export/pptx?{qs}", cls=_BTN2),
             A("Download .md", href=f"{BASE}/export/md?{qs}", cls=f"ml-2 {_BTN2}"),
-            P(v.disclaimer, cls="mt-2 text-xs text-slate-500"),
-            P(vm.FOOTER, cls="text-xs text-slate-500")),
+            P(v.disclaimer, cls="mt-2 text-xs text-muted"),
+            P(vm.FOOTER, cls="text-xs text-muted")),
         id="plan",
     )
 
@@ -249,7 +250,7 @@ def _selector(account_name: str | None, snapshot_id, snap_options):
     accounts = vm.account_options()
     acct = Div(
         Label("Account", fr="account_name",
-              cls="block text-xs font-medium text-slate-600"),
+              cls="block text-xs font-medium text-muted"),
         Select(*(Option(disp, value=name, selected=(name == account_name))
                  for name, disp in accounts),
                id="account_name", name="account_name", cls=_SEL,
@@ -259,7 +260,7 @@ def _selector(account_name: str | None, snapshot_id, snap_options):
     if snap_options:
         snap = Div(
             Label("Pipeline snapshot", fr="snapshot_id",
-                  cls="block text-xs font-medium text-slate-600"),
+                  cls="block text-xs font-medium text-muted"),
             Select(*(Option(lbl, value=str(sid), selected=(sid == snapshot_id))
                      for sid, lbl in snap_options),
                    id="snapshot_id", name="snapshot_id", cls=_SEL,
@@ -267,7 +268,7 @@ def _selector(account_name: str | None, snapshot_id, snap_options):
                    hx_include="#ap-selector"),
         )
     else:
-        snap = Div(P(vm.NO_PIPELINE_SNAPSHOTS, cls="text-sm text-amber-800"),
+        snap = Div(P(vm.NO_PIPELINE_SNAPSHOTS, cls="text-sm text-medium-ink"),
                    Input(type="hidden", name="snapshot_id", value=""))
     return Form(Div(acct, snap, cls="grid gap-3 sm:grid-cols-2"), id="ap-selector")
 
@@ -275,10 +276,10 @@ def _selector(account_name: str | None, snapshot_id, snap_options):
 def _import_panel(expanded: bool):
     return Details(
         Summary("Import account-facts CSV",
-                cls="cursor-pointer text-sm font-medium text-slate-700"),
+                cls="cursor-pointer text-sm font-medium text-ink"),
         Div(_upload_form(), cls="mt-3"),
         open=expanded,
-        cls="rounded border border-slate-200 bg-slate-50 px-4 py-3",
+        cls="rounded border border-border bg-surface px-4 py-3",
     )
 
 
@@ -286,8 +287,8 @@ def _body():
     if not vm.has_facts():
         return Div(
             _import_panel(True),
-            P(vm.EMPTY_STATE, cls="mt-4 rounded border border-slate-200 "
-                                  "bg-slate-50 px-4 py-3 text-slate-600"),
+            P(vm.EMPTY_STATE, cls="mt-4 rounded border border-border "
+                                  "bg-surface px-4 py-3 text-muted"),
             id="ap-body")
     accounts = vm.account_options()
     snap_options = vm.snapshot_options()
@@ -303,7 +304,7 @@ def _body():
 
 def _full_page():
     return page("Account Plan",
-                H1("Account plan generator", cls="text-2xl font-bold text-slate-900"),
+                H1("Account plan generator", cls="text-2xl font-bold text-ink"),
                 _body(), active=BASE)
 
 
@@ -335,12 +336,12 @@ def register(rt):
         form = await request.form()
         upload = form.get("facts_csv")
         if upload is None or not hasattr(upload, "read"):
-            return P("No file received.", cls="text-sm text-red-700")
+            return P("No file received.", cls="text-sm text-high-ink")
         raw = await upload.read()
         try:
             df = ingest.load_csv(raw)
         except ingest.IngestError as e:
-            return P(str(e), cls="text-sm text-red-700")
+            return P(str(e), cls="text-sm text-high-ink")
         token = uuid.uuid4().hex
         _UPLOADS[token] = raw
         mapping = vm.suggest_facts_mapping(list(df.columns))
@@ -351,7 +352,7 @@ def register(rt):
         form = await request.form()
         raw = _UPLOADS.get(form.get("token", ""))
         if raw is None:
-            return P("Upload expired — re-select the CSV.", cls="text-sm text-red-700")
+            return P("Upload expired — re-select the CSV.", cls="text-sm text-high-ink")
         df = ingest.load_csv(raw)
         mapping = _mapping_from_form(form)
         date_format = form.get("date_format", "auto")
@@ -379,7 +380,7 @@ def register(rt):
             df = ingest.load_csv(raw)
             grid = _facts_grid(form["token"], vm.import_preview(df, mapping, date_format),
                                date_format)
-            errs = Div(*[P(b, cls="text-sm text-red-700") for b in result.blocking])
+            errs = Div(*[P(b, cls="text-sm text-high-ink") for b in result.blocking])
             return Div(_import_panel(True), Div(errs, grid, cls="mt-2"), id="ap-body")
         _UPLOADS.pop(form["token"], None)
         return _body()
@@ -388,7 +389,7 @@ def register(rt):
     def get(account_name: str = "", snapshot_id: str = ""):
         account_name = _account_from_form(account_name)
         if account_name is None:
-            return Div(P(vm.EMPTY_STATE, cls="text-sm text-slate-600"), id="plan")
+            return Div(P(vm.EMPTY_STATE, cls="text-sm text-muted"), id="plan")
         sid = _snapshot_from_form(snapshot_id)
         return _plan(vm.build(account_name, sid), account_name, sid)
 
